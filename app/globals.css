@@ -1,0 +1,263 @@
+@import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+    
+   
+    
+    --purple-1:'#f5f1ff';
+    --purple-2:'#ede5ff';
+    --purple-3:'#dbcfff';
+    --purple-4:'#c3a8ff';
+    --purple-5:'#a678ff';
+    --purple-6:'#8d41ff';
+    --purple-7:'#831bff';
+    --purple-8:'#7609f8';
+    --purple-9:"#6207d0";
+    --purple-10:"#5208aa"
+    --purple-11:"#2d016a"
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+::-webkit-scrollbar{
+  display: none !important;
+}
+
+html{
+  scroll-behavior: smooth;
+}
+
+
+/* STYLING STARTS HERE */
+.glassmorph {
+  background: rgba(19, 19, 19, 0.25);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(19, 19, 19, 0.125);
+}
+
+.glassmorph_darkmode {
+  background: rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(29px);
+  backdrop-filter: blur(29px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* [Hover States Of Button Component] */
+
+.outline::after {
+  content: "";
+  width: 0%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: rgb(131 27 255 / var(--tw-bg-opacity));
+  border-radius: inherit !important;
+  background-size: 0% 100%;
+  transition: width 0.3s; /* Add a transition for smooth animation */
+}
+
+.filled::after {
+  content: "";
+  width: 0%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: white !important;
+  border-radius: inherit !important;
+  background-size: 0% 100%;
+  transition: width 0.3s; /* Add a transition for smooth animation */
+}
+
+/* Hover effect when the parent (.outline) is hovered */
+.outline:hover::after {
+  width: 100%;
+  background-size: 100% 100%;
+}
+
+/* Hover effect when the parent (.filled) is hovered */
+.filled:hover::after {
+  width: 100%;
+  background-size: 100% 100%;
+}
+
+/* *[LOGO FONT] */
+.logoFont {
+  font-family: "Share Tech Mono", monospace;
+}
+
+/* *[GRADIENTS] */
+
+/*@apply*/
+.purpleGradient_light {
+  background: #831bff;
+  background: -webkit-linear-gradient(186deg, #831bff 0%, #e0c7ff 100%);
+  background: linear-gradient(186deg, #831bff 0%, #e0c7ff 100%);
+}
+.purpleGradient_dark {
+  background: #831bff;
+  background: -webkit-linear-gradient(186deg, #831bff 0%, #020008 100%);
+  background: linear-gradient(186deg, #831bff 0%, #020008 100%);
+}
+
+.cardGlassmorphism_light {
+  background: rgba(212,212,212,0.5);
+  backdrop-filter: blur(9px);
+  border: 1px solid rgba(212,212,212,0.25);
+}
+.cardGlassmorphism_dark {
+  background: rgba(71, 85, 105, 0.55);
+  backdrop-filter: blur(3px);
+  border: 1px solid rgba(71, 85, 105, 0.275);
+}
+
+/* *[NAVBAR] */
+.navbarHover::after {
+  position: absolute;
+  margin-top: 5px;
+  bottom: 0;
+  left: 50%;
+  content: "";
+  width: 10px;
+  height: 2px;
+  background-color: #831bff;
+}
+
+/* *[HERO SECTION STYLES] */
+.heroGlassmorphism {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(9px);
+  border: 1px solid rgba(255, 255, 255, 0.225);
+}
+.navGlassmorphism {
+  background: rgba(147, 51, 234, 0.15);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(147, 51, 234, 0.075);
+}
+.line::before {
+  display: inline-block;
+  align-items: center;
+  content: "";
+  width: 7rem;
+  height: 2px;
+  background-color: #831bff;
+  margin-bottom: 5px;
+  margin-right: 5px;
+}
+.wordGradient {
+  background-image: linear-gradient(90deg, #831bff, #dbcfff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* *[WHY-US] */
+.gradient-one{
+  background: #7e22ce;
+background: -webkit-linear-gradient(106deg, #7e22ce 0%, #d8b4fe 100%);
+background: linear-gradient(106deg, #7e22ce 0%, #d8b4fe 100%);
+}
+.gradient-two{
+  background: #7e22ce;
+background: -webkit-linear-gradient(243deg, #7e22ce 0%, #d8b4fe 100%);
+background: linear-gradient(243deg, #7e22ce 0%, #d8b4fe 100%);
+}
+
+/* *[FEATURES] */
+.gridContainer{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: 1rem;
+}
+
+/* *[SIGNUP COMPONENT] */
+.signUpGradient{
+  background: #141414;
+  background: -webkit-linear-gradient(51deg, #141414 0%, #847f7f 100%);
+  background: linear-gradient(51deg, #141414 0%, #847f7f 100%);
+}
+
+/* [RINGS] */
+.ring {
+  width: 100px;
+  height: 100px;
+  border: 8px solid transparent;
+  border-top-color: #007bff; /* Change the color as desired */
+  border-radius: 50%;
+  position: absolute;
+  animation: spin 2s linear infinite; /* Add animation for rotation */
+}
+
