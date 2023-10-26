@@ -1,3 +1,6 @@
+"use client";
+
+import { useNairaFormatter } from "@/Hooks/useNairaFormatter";
 import { useStore } from "@/provider";
 import {
   Chart as ChartJS,
@@ -9,6 +12,8 @@ import {
   Legend,
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
+import SlideIn from "./Animations/slideIn";
+import FadeIn from "./Animations/fadeIn";
 
 ChartJS.register(
   CategoryScale,
@@ -27,9 +32,15 @@ const Chart = (props: chartProps) => {
   const { is_darkmode } = useStore();
   const { thisWeek } = props;
 
+  const total_amount = thisWeek.reduce((acc, curr) => {
+    return acc + curr.amount;
+  }, 0);
+
+  const amount_in_naira = useNairaFormatter(total_amount);
+
   // Filter the data to include only Monday to Friday
   const filteredData = {
-    labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     datasets: [
       {
         label: "THIS-WEEK",
@@ -46,7 +57,7 @@ const Chart = (props: chartProps) => {
 
   const options = {
     responsive: true,
-    maintainAspectRatio: false,
+    aspectRatio: 1.5,
     plugins: {
       legend: {
         position: "top" as const,
@@ -83,8 +94,18 @@ const Chart = (props: chartProps) => {
     },
   };
 
-  //@ts-ignore
-  return <Bar options={options} data={filteredData} />;
+  return (
+    <FadeIn className="w-full p-2 mt-5 rounded-md dark:bg-slate-900 bg-gray-100 h-[30rem]">
+      <Bar
+        //@ts-ignore
+        options={options}
+        data={filteredData}
+      />
+      <SlideIn className="text-center mt-3 wordGradient md:text-[1.1rem] sm:text-base text-2xl">
+        TOTAL TRANSACTIONS THIS WEEK: <strong>{amount_in_naira}</strong>
+      </SlideIn>
+    </FadeIn>
+  );
 };
 
 export default Chart;

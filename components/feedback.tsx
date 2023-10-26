@@ -91,7 +91,6 @@ const Feedback = (props: feedbackProps) => {
             varient="filled"
             name="Send"
             disabled={false}
-            width="full"
             onClick={() => {}}
           />
           <Button
@@ -99,7 +98,6 @@ const Feedback = (props: feedbackProps) => {
             varient="outlined"
             name="Cancel"
             disabled={false}
-            width="full"
             onClick={handleClose}
           />
         </div>

@@ -5,14 +5,18 @@ export interface MotionProps {
   children: React.ReactNode;
 }
 
-const Expand: React.FC<MotionProps> = ({ children }) => {
+const Expand: React.FC<MotionProps & { className?: string }> = ({
+  children,
+  className,
+}) => {
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ scale: 0 }}
+        className={className}
+        initial={{ scale: 0.5 }}
         animate={{ scale: 1 }}
-        exit={{ scale: 0 }}
-        transition={{ duration: 0.5, damping: 5 }}
+        exit={{ scale: 0.5 }}
+        transition={{ damping: 3, type: "tween" }}
       >
         {children}
       </motion.div>

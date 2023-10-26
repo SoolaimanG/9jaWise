@@ -1,9 +1,11 @@
+import { error } from "console";
 import { useState, useEffect } from "react";
 
 export interface FetchDataProps<T> {
   is_loading: boolean;
-  error: number | null;
+  error: boolean | null;
   data: T | null;
+  options?: {};
 }
 
 export type FetchDataOptions = {
@@ -12,10 +14,7 @@ export type FetchDataOptions = {
   interval?: number;
 };
 
-export const useFetchData = <T>(
-  options: FetchDataOptions,
-  dependencies: any[] = []
-) => {
+export const useFetchData = <T>(options: FetchDataOptions) => {
   const { url, interval, retry } = options;
   const [state, setState] = useState<FetchDataProps<T>>({
     is_loading: false,
@@ -31,22 +30,22 @@ export const useFetchData = <T>(
         const data = await res.json();
         setState({ is_loading: false, error: null, data });
       } else {
-        setState({ is_loading: false, error: res.status, data: null });
+        setState({ is_loading: false, error: true, data: null });
       }
     } catch (error) {
-      setState({ is_loading: false, error: 500, data: null });
+      setState({ is_loading: false, error: true, data: null });
     }
   };
 
   useEffect(() => {
     fetchData();
 
-    if (retry) {
+    if (retry && state.error) {
       const intervalId = setInterval(fetchData, interval);
 
       return () => clearInterval(intervalId);
     }
-  }, [...dependencies, interval]);
+  }, [interval]);
 
   return state;
 };

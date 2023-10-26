@@ -26,7 +26,6 @@ const Button = (props: buttonProps) => {
     className,
     onClick,
   } = props;
-  //[Select Button Width]
 
   const hoverTypes = {
     filled: "filled rounded-sm hover:text-purple-600",
@@ -62,7 +61,7 @@ const Button = (props: buttonProps) => {
         />
       )}
       {!states && icon && <span>{icon}</span>}
-      <span className="z-10">{name}</span>
+      {name && <span className="z-10">{name}</span>}
     </button>
   );
 };

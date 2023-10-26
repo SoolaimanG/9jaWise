@@ -2,14 +2,20 @@ import { BsFillCheckCircleFill } from "react-icons/bs";
 import { AiFillCloseCircle } from "react-icons/ai";
 import Chip from "./chip";
 import Button from "./button";
+import { stateProps } from "@/provider";
+import { statusProps } from "./loaders";
+import { FaTimes, FaTimesCircle } from "react-icons/fa";
+import { useFormatDate } from "@/Hooks/useFormatDate";
+import { transactiontypes } from "@/Models/user";
+import { useNairaFormatter } from "@/Hooks/useNairaFormatter";
 
 export type receiptProps = {
-  status: "success" | "pending";
+  status: statusProps;
   amount: number;
   refNumber: number;
   receiver: string;
   sender: string;
-  payment_method: "trf" | "card";
+  payment_type: transactiontypes;
   payment_time: number;
 };
 
@@ -20,9 +26,13 @@ const Receipt = (props: receiptProps) => {
     receiver,
     refNumber,
     sender,
-    payment_method,
+    payment_type,
     payment_time,
   } = props;
+
+  const date = useFormatDate(payment_time);
+  const naira = useNairaFormatter(amount);
+
   const receiptDetails = [
     {
       id: 1,
@@ -36,13 +46,13 @@ const Receipt = (props: receiptProps) => {
     },
     {
       id: 4,
-      desc: "Payment method",
-      prop: payment_method,
+      desc: "Payment type",
+      prop: payment_type[0].toUpperCase().concat(payment_type.substring(1)),
     },
     {
       id: 1,
       desc: "Payment time",
-      prop: payment_time,
+      prop: date,
     },
     {
       id: 3,
@@ -55,33 +65,53 @@ const Receipt = (props: receiptProps) => {
     <div className="w-full flex items-center justify-center flex-col gap-2">
       <span
         className={`p-3 rounded-full ${
-          status === "pending" ? "bg-yellow-100" : "bg-green-100"
+          status === "loading"
+            ? "bg-yellow-100"
+            : status === "failed"
+            ? "bg-red-300"
+            : "bg-green-100"
         } text-2xl`}
       >
-        {status === "pending" ? (
+        {status === "loading" ? (
           <AiFillCloseCircle color={"#ca8a04"} />
+        ) : status === "failed" ? (
+          <FaTimesCircle color="red" />
         ) : (
           <BsFillCheckCircleFill color={"#15803d"} />
         )}
       </span>
-      <p className="text-xl text-slate-700 dark:text-white">Payment Success!</p>
+      <p className="text-xl text-slate-700 dark:text-white">
+        {status === "complete"
+          ? "Payment Success!"
+          : status === "loading"
+          ? "Payment Pending!"
+          : "Payment Failed!"}
+      </p>
       <span className="text-[0.9rem] text-slate-600 text-center dark:text-gray-200">
-        {status === "pending"
+        {status === "loading"
           ? "Processing your payment."
+          : status === "failed"
+          ? "Could not complete payment"
           : "Your payment has been successfully done."}
       </span>
       {/* D-[2] */}
       <div className="w-full mt-3 p-2 bg-gray-100 flex flex-col gap-2 text-slate-700 dark:bg-slate-700 dark:text-gray-200 rounded-md">
         <div className="w-full flex items-center justify-between">
           <span className="text-[0.9rem]">Amount</span>
-          <h2 className="text-xl font-semibold">{amount}</h2>
+          <h2 className="text-base">{naira}</h2>
         </div>
         <div className="w-full flex items-center justify-between">
           <span className="text-[0.9rem]">Payment status</span>
           {/* @ts-ignore */}
           <Chip
-            varient={status === "pending" ? "warning" : "success"}
-            text={status === "pending" ? "processing" : "uccess"}
+            varient={
+              status === "loading"
+                ? "warning"
+                : status === "failed"
+                ? "error"
+                : "success"
+            }
+            text={status}
           />
         </div>
         <hr />
@@ -99,18 +129,18 @@ const Receipt = (props: receiptProps) => {
       </div>
       <div className="w-full flex flex-col gap-2">
         <Button
+          className="h-[2.5rem] px-3"
           name="Download PDF reciept"
           disabled={false}
           varient="outlined"
-          width="full"
           onClick={() => {}}
           borderRadius={true}
         />
         <Button
+          className="h-[2.5rem] px-3"
           name="Done"
           disabled={false}
           varient="filled"
-          width="full"
           onClick={() => {}}
           borderRadius={true}
         />

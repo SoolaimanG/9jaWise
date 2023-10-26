@@ -1,4 +1,4 @@
-import React, { SetStateAction, useEffect } from "react";
+import React, { SetStateAction, useState } from "react";
 import Loaders from "./loaders";
 import ProgressBars, { passwordStrength } from "./progressBars";
 
@@ -7,8 +7,8 @@ type inputProps = {
   type: "text" | "number" | "password" | "email";
   placeholder?: string;
   is_loading?: boolean;
-  error: boolean;
-  disabled: boolean;
+  error?: boolean;
+  disabled?: boolean;
   max?: number;
   countChar?: boolean;
   color?: boolean;
@@ -51,15 +51,19 @@ const Input = (props: inputProps) => {
     }
   };
 
+  const [focused, setFocused] = useState(false);
+
   return (
     <>
       <div
-        className={`px-1 ${className} flex gap-1 ${
-          disabled ? "bg-gray-100 text-gray-500 border-gray-500" : ""
+        onBlur={() => setFocused(false)}
+        onClick={() => setFocused(true)}
+        className={`px-1 w-full ${className} flex gap-1 ${
+          disabled && "bg-gray-100 text-gray-500 border-gray-500"
         } items-center border ${
           error
             ? "bg-red-100 border-red-500"
-            : `border-purple-500 ${
+            : ` ${focused ? "border-purple-500" : "border-gray-500"} ${
                 color ? "bg-purple-100" : "bg-white dark:bg-slate-700"
               }`
         } rounded-md`}
@@ -82,7 +86,7 @@ const Input = (props: inputProps) => {
         )}
       </div>
       {max && (
-        <span className="pl-1">
+        <span className="pl-1 w-full flex items-start justify-start">
           {value.toString().length}/{max}
         </span>
       )}

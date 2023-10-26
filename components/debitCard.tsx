@@ -1,17 +1,21 @@
+import { useNairaFormatter } from "@/Hooks/useNairaFormatter";
 import { useStore } from "@/provider";
 import { motion } from "framer-motion";
 
 export type debitCardProps = {
   type: "color" | "glassmorphism";
   name: string;
-  accountNumber: number;
+  className?: string;
+  accountNumber: number | null;
   balance: number;
   transform?: boolean;
 };
 
 const DebitCard = (props: debitCardProps) => {
-  const { type, name, accountNumber, balance, transform } = props;
+  const { type, name, className, accountNumber, balance, transform } = props;
   const { is_darkmode } = useStore();
+
+  const format_balance = useNairaFormatter(balance);
 
   const styles = {
     color: `${is_darkmode ? "purpleGradient_dark" : "purpleGradient_light"}`,
@@ -26,7 +30,11 @@ const DebitCard = (props: debitCardProps) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ type: "spring", stiffness: 100 }}
-      className={`rounded-md w-[25rem] md:w-full sm:w-full ${styles[type]} transition-all delay-50 h-fit ease-linear cursor-pointer`}
+      className={`rounded-md ${
+        className ? className : "w-[25rem]"
+      } md:w-full sm:w-full ${
+        styles[type]
+      } transition-all delay-50 h-fit ease-linear cursor-pointer`}
     >
       {!transform && (
         <div
@@ -48,14 +56,14 @@ const DebitCard = (props: debitCardProps) => {
           </div>
           <div className="flex flex-col gap-1 sm:gap-0">
             <strong className="sm:text-[1.3rem] text-[1.6rem] dark:text-white">
-              Number
+              Account
             </strong>
             <span
               className={`sm:text-[1rem] dark:text-white ${
                 type === "glassmorphism" && "text-blacks-1000"
               }`}
             >
-              {accountNumber}
+              {accountNumber ? accountNumber : "Nil"}
             </span>
           </div>
         </div>
@@ -77,13 +85,8 @@ const DebitCard = (props: debitCardProps) => {
             >
               Balance
             </span>
-            <strong
-              className={`sm:text-[1rem] text-[1.7rem] dark:text-white ${
-                type === "glassmorphism" &&
-                "text-blacks-1000 dark:text-gray-500"
-              }`}
-            >
-              {"N" + balance}
+            <strong className={`sm:text-[1rem] wordGradient text-[1.7rem]`}>
+              {format_balance}
             </strong>
           </div>
           <svg

@@ -10,23 +10,20 @@ import Rings from "./rings";
 export const _UNCHANGEDDATA = [
   {
     id: 1,
-    number: "15",
-    name: "years of experience",
+    name: "Secure payment system",
   },
   {
     id: 2,
     number: "98%",
-    name: "customer satisfaction",
+    name: "Free Sign up",
   },
   {
     id: 3,
-    number: "4k",
-    name: "new users per week",
+    name: "Free account number",
   },
   {
     id: 4,
-    number: "100%",
-    name: "free service",
+    name: "24/7 Customer support",
   },
 ];
 
@@ -96,7 +93,7 @@ const Hero = () => {
                 animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
                 className="cursor-pointer bg-purple-600 w-fit text-white px-3 py-1"
               >
-                It's a habit
+                It&apos;s a habit
               </motion.span>
             </motion.p>
             <motion.span
@@ -157,24 +154,33 @@ const Hero = () => {
       <motion.article
         initial="hidden"
         animate="visible"
-        variants={container}
-        className={`w-full absolute bottom-0 left-0 md:relative sm:relative md:mt-5 sm:mt-5 px-1 transition-all delay-75 py-4 h-fit flex items-center justify-between  ${
+        className={`w-full z-10 rotate-1 mb-3 overflow-hidden cursor-pointer absolute bottom-0 left-0 md:relative sm:relative md:mt-5 sm:mt-5 px-1 transition-all delay-75 h-fit flex items-center md:justify-normal md:gap-10 justify-between  ${
           is_darkmode ? "cardGlassmorphism_dark" : "cardGlassmorphism_light"
         }`}
       >
         {_UNCHANGEDDATA.map((d) => (
           <motion.div
             variants={item}
-            className="flex w-full justify-center sm:flex-col md:flex-col items-center gap-1"
+            className="flex w-full h-[5rem] justify-center sm:flex-col md:flex-col items-center gap-1"
             key={d.id}
           >
-            <h2 className="text-4xl sm:text-lg md:text-2xl">{d.number}</h2>
-            <p className="text-xl text-center sm:text-[0.9rem] md:text-[0.9rem] dark:text-gray-300 text-slate-700">
-              {(size.x as number) <= 280 ? d.name.split(" ")[0] : d.name}
+            <p
+              className={`text-2xl md:text-4xl sm:text-4xl ${
+                d.id % 2 !== 0 && "liner"
+              } text-center sm:text-[0.9rem] md:text-[0.9rem] dark:text-gray-300  ${
+                size.x < 700 && "linerAnimation"
+              } w-fit text-slate-700`}
+              style={{
+                overflow: "hidden", // Prevent text overflow
+                whiteSpace: "nowrap", // Prevent text wrapping
+              }}
+            >
+              {d.name}
             </p>
           </motion.div>
         ))}
       </motion.article>
+      <div className="w-full mb-5 absolute bg-purple-300 h-[5rem] bottom-0 -rotate-2" />
     </section>
   );
 };

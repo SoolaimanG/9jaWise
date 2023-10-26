@@ -15,7 +15,7 @@ const Logo = ({
   };
   return (
     <div
-      className={`w-full cursor-pointer flex ${
+      className={`w-fit cursor-pointer flex ${
         color === "white" ? "text-white" : "text-purple-500"
       }`}
     >

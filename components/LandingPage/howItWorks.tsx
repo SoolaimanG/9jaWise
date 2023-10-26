@@ -95,15 +95,15 @@ const HowItWorks = () => {
           </motion.div>
           <motion.div className="w-full transition-all delay-75 ease-linear flex flex-col gap-5">
             {howItWorksContent.map((content, i) => (
-              <AnimatePresence>
+              <AnimatePresence key={i}>
                 <motion.div
                   animate={
                     inView
                       ? { opacity: 1, x: 0, transition: { delay: 0.75 } }
                       : { opacity: 0, x: 10 }
                   }
+                  exit={{ opacity: 0, x: 10 }}
                   className="flex flex-col gap-2"
-                  key={i}
                 >
                   <div
                     //@ts-ignore
@@ -134,11 +134,7 @@ const HowItWorks = () => {
                       transition={{ duration: 0.5, delay: 0.15 }}
                       className="text-lg transition-all delay-75 ease-linear"
                     >
-                      <TextStreamer
-                        text={content.context}
-                        speed={100}
-                        isDone={false}
-                      />
+                      <TextStreamer text={content.context} speed={100} />
                     </motion.div>
                   )}
                   <div className="w-full h-[2px] bg-gray-300 rounded-sm" />

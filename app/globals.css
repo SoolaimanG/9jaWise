@@ -1,4 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Carter+One&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -99,11 +101,14 @@ html{
   scroll-behavior: smooth;
 }
 
+body{
+  font-family: 'Space Grotesk', sans-serif;
+}
 
 /* STYLING STARTS HERE */
 .glassmorph {
   background: rgba(19, 19, 19, 0.25);
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(29px);
   border: 1px solid rgba(19, 19, 19, 0.125);
 }
 
@@ -223,6 +228,21 @@ html{
   -webkit-background-clip: text;
   color: transparent;
 }
+.liner{
+  font-family: 'Carter One', cursive;
+}
+.linerAnimation {
+  animation: toAndFro 5s infinite both;
+}
+
+@keyframes toAndFro {
+  0%, 100% {
+    transform: translateX(0); 
+  }
+  50% {
+    transform: translateX(-300px); 
+  }
+}
 
 /* *[WHY-US] */
 .gradient-one{
@@ -237,27 +257,84 @@ background: linear-gradient(243deg, #7e22ce 0%, #d8b4fe 100%);
 }
 
 /* *[FEATURES] */
-.gridContainer{
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
-  gap: 1rem;
+.hoverGlassmorph:hover{
+  padding: 10px;
+  border-radius: 1rem;
+  background: rgba(71, 85, 105, 0.55);
+  backdrop-filter: blur(3px);
+  border: 1px solid rgba(71, 85, 105, 0.275);
+}
+.hoverGlassmorph_light:hover{
+  padding: 10px;
+  border-radius: 1rem;
+  background: rgba(212,212,212,0.5);
+  backdrop-filter: blur(9px);
+  border: 1px solid rgba(212,212,212,0.25);
 }
 
 /* *[SIGNUP COMPONENT] */
 .signUpGradient{
-  background: #141414;
-  background: -webkit-linear-gradient(51deg, #141414 0%, #847f7f 100%);
-  background: linear-gradient(51deg, #141414 0%, #847f7f 100%);
+  background: #a855f7;
+  background: -webkit-linear-gradient(145deg, #a855f7 0%, #f3e8ff 100%);
+  background: linear-gradient(145deg, #a855f7 0%, #f3e8ff 100%);
 }
 
-/* [RINGS] */
-.ring {
-  width: 100px;
-  height: 100px;
-  border: 8px solid transparent;
-  border-top-color: #007bff; /* Change the color as desired */
-  border-radius: 50%;
-  position: absolute;
-  animation: spin 2s linear infinite; /* Add animation for rotation */
+/* *[CHATBOT] */
+.headerBackground_light{
+  background: rgba(218,218,218,0.45);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(218,218,218,0.225);
 }
 
+.headerBackground_dark{
+  background: rgba(136,136,136,0.45);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(136,136,136,0.225);
+}
+
+.loader {
+  animation: loader 1.5s linear infinite both;
+}
+
+.loader_one {
+  animation-duration: 0.5s;
+  animation-iteration-count: infinite;
+  animation-name: loader;
+}
+
+.loader_two {
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+  animation-name: loader;
+}
+
+.loader_three {
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+  animation-name: loader;
+}
+
+@keyframes loader {
+  0%, 100% {
+    transform: translateY(0); 
+  }
+  50% {
+    transform: translateY(-8px); 
+  }
+}
+/* *OVERLAY */
+.overlay_bg_light{
+  background: rgba(255,255,255,0.4);
+-webkit-backdrop-filter: blur(32px);
+backdrop-filter: blur(32px);
+border: 1px solid rgba(255,255,255,0.2);
+}
+
+.overlay_bg_dark{
+  background: rgba(0,0,0,0.4);
+  -webkit-backdrop-filter: blur(32px);
+  backdrop-filter: blur(32px);
+  border: 1px solid rgba(0,0,0,0.2);
+}

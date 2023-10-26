@@ -148,7 +148,7 @@ const LandingNavBar = () => {
             <DarkMode hide_name={true} color="p" position="h" />
             <motion.div variants={item}>
               <Link
-                className={`text-xl px-5 py-1 rounded-md border border-purple-600 text-purple-600`}
+                className={`text-xl px-5 py-2 rounded-md border border-purple-600 text-purple-600`}
                 href={"/"}
               >
                 Sign In
@@ -156,8 +156,8 @@ const LandingNavBar = () => {
             </motion.div>
             <motion.div variants={item}>
               <Link
-                className={`text-xl px-5 py-1 rounded-md bg-purple-600 text-white`}
-                href={"/"}
+                className={`text-xl px-5 py-2 rounded-md bg-purple-600 text-white`}
+                href={"/auth/signup"}
               >
                 Sign Up
               </Link>

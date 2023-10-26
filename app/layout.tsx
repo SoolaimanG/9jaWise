@@ -1,13 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import type { Metadata } from "next";
-import { Space_Grotesk } from "next/font/google";
-
-const space = Space_Grotesk({
-  weight: ["300", "400", "500", "600", "700"],
-  subsets: ["latin"],
-  display: "swap",
-});
+import ChatBot from "@/components/Bot/chatBot";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -21,11 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        className={`${space.className} dark:bg-blacks-500 dark:text-gray-200`}
-      >
+      <body className={` dark:bg-blacks-500 dark:text-gray-200`}>
         {children}
         <Toaster />
+        <ChatBot />
       </body>
     </html>
   );

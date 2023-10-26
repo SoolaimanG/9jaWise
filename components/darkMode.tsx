@@ -49,7 +49,7 @@ const DarkMode = (props: darkModeProps) => {
       window.document.documentElement.classList.add("dark");
       setIs_darkmode(true);
     }
-  }, []);
+  }, [checkExistance]);
 
   return (
     <div

@@ -21,9 +21,8 @@ const SignUp = () => {
             ? {
                 y: 0,
                 transition: { delay: 0.75, stiffness: 0.4 },
-                translateY: 0,
               }
-            : { y: 50, translateY: 200 }
+            : { y: 300 }
         }
         className={`flex md:flex-col sm:flex-col items-center px-3 py-4 justify-center gap-2 border border-white text-white signUpGradient w-[80%] md:w-full sm:w-full m-auto h-[80%] rounded-md`}
       >
@@ -32,7 +31,7 @@ const SignUp = () => {
             animate={
               inView
                 ? { opacity: 1, transition: { delay: 0.75, stiffness: 0.4 } }
-                : { y: 50, opacity: 0 }
+                : { y: 300, opacity: 0 }
             }
             className="text-5xl sm:text-3xl"
           >
@@ -42,7 +41,7 @@ const SignUp = () => {
             animate={
               inView
                 ? { opacity: 1, transition: { delay: 0.75, stiffness: 0.4 } }
-                : { y: 50, opacity: 0 }
+                : { y: 300, opacity: 0 }
             }
             className="text-xl sm:text-lg"
           >

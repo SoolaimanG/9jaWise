@@ -19,7 +19,7 @@ export const useOptimistic = <T>(props: OptimisticProps<T>) => {
   useEffect(() => {
     const updatedData = applyOptimistic();
     setAddData(updatedData);
-  }, []);
+  }, [data]);
 
   const revertOptimisticUpdate = () => {
     // Revert to the original data when there is an error

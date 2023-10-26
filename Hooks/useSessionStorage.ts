@@ -20,10 +20,10 @@ export const useSessionStorage = <T>({
   type,
   data,
   key,
-}: storageProps<T>): T | undefined => {
+}: storageProps<T>): T | null => {
   const newWindow: Window | null =
     typeof window !== "undefined" ? window : null;
-  const [cachedData, setCachedData] = useState<T | undefined>(undefined);
+  const [cachedData, setCachedData] = useState<T | null>(null);
 
   useEffect(() => {
     if (type === "get" && key) {
@@ -37,7 +37,7 @@ export const useSessionStorage = <T>({
       const { addKey, value } = data;
       newWindow?.sessionStorage.setItem(addKey, JSON.stringify(value));
     }
-  }, []);
+  }, [data, type]);
 
   return cachedData;
 };

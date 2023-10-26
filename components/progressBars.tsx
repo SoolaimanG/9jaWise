@@ -1,3 +1,5 @@
+"use client";
+
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css"; // Import the styles
 
@@ -21,6 +23,8 @@ const ProgressBars = (props: progressBarProps) => {
         text={`${value}`}
         styles={buildStyles({
           textSize: "45px",
+          pathColor: "#7609f8",
+          textColor: "#7609f8",
         })}
       />
     </div>

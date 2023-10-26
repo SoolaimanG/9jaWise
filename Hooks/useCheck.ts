@@ -1,26 +1,31 @@
+import { useEffect, useState } from "react";
+
 export const useCheck = (
   value: string,
   type: "email" | "password" | "username"
 ) => {
   const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/;
-  const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+  const emailRegex =
+    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
   const usernameRegex = /^[a-zA-Z]+$/;
 
-  let res = false;
+  let [res, setRes] = useState(false);
 
-  switch (type) {
-    case "email":
-      res = emailRegex.test(value);
-      break;
-    case "password":
-      res = passwordRegex.test(value);
-      break;
-    case "username":
-      res = usernameRegex.test(value);
-      break;
-    default:
-      break;
-  }
+  useEffect(() => {
+    switch (type) {
+      case "email":
+        setRes(emailRegex.test(value));
+        break;
+      case "password":
+        setRes(passwordRegex.test(value));
+        break;
+      case "username":
+        setRes(usernameRegex.test(value));
+        break;
+      default:
+        break;
+    }
+  }, [value]);
 
   return res;
 };
