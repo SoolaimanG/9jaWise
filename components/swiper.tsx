@@ -5,10 +5,11 @@ export type swiperProps = {
   text: string;
   showIndicator?: boolean;
   functionCall: () => void;
+  disable?: boolean;
 };
 
 const Swiper = (props: swiperProps) => {
-  const { text, showIndicator, functionCall } = props;
+  const { text, showIndicator, disable, functionCall } = props;
 
   const [x, setX] = useState<number>(0);
   const divRef = useRef<HTMLDivElement>();
@@ -47,7 +48,7 @@ const Swiper = (props: swiperProps) => {
       setX(0);
     } else {
       //Call function in here
-      functionCall();
+      !disable && functionCall();
     }
   };
 
@@ -89,10 +90,11 @@ const Swiper = (props: swiperProps) => {
       className={`w-full bg-purple-500 relative px-1 py-2 rounded-xl`}
     >
       <button
+        disabled={disable}
         onMouseMove={mouseMove}
         onTouchMove={touchMove}
         style={{ marginLeft: x }}
-        className="w-1/4 bg-white z-10 dark:bg-slate-700 dark:text-white flex items-center justify-center text-purple-600 transition-all ease-linear rounded-lg py-1"
+        className="w-1/4 bg-white disabled:cursor-not-allowed z-10 dark:bg-slate-700 dark:text-white flex items-center justify-center text-purple-600 transition-all ease-linear rounded-lg py-1"
       >
         {text}
       </button>

@@ -8,6 +8,7 @@ import {
   requestOTPProps,
 } from "@/Models/requestOTP";
 import { NextRequest } from "next/server";
+import { HTTP_STATUS } from "../../donation/withdraw/route";
 
 export type otpProps = {
   loginMode: "email" | "phoneNumber";
@@ -20,112 +21,114 @@ const maxRequests = 5; // Maximum allowed requests within the time frame
 
 export const POST = async (req: NextRequest) => {
   try {
-    const { loginMode, email }: otpProps = await req.json();
+    const { loginMode, email }: otpProps = await req.json(); //Extract the payload from the request.json object
 
-    if (loginMode === "phoneNumber") {
+    //Can only send OTP to users with email
+    if (loginMode !== "email") {
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "OTP request to phone number is not supported.",
       });
     }
 
-    if (loginMode === "email") {
-      const checkEmail = regexTesting("email", email as string);
+    //Check if the email is valid
+    const checkEmail = regexTesting("email", email as string);
 
-      if (!checkEmail) {
+    if (!checkEmail) {
+      return new Response(null, {
+        status: HTTP_STATUS.BAD,
+        statusText: "Invalid email address.",
+      });
+    }
+
+    await connectDatabase(); // Open the database connection at the beginning
+
+    const alreadyRequested: requestOTPProps | null =
+      await checkIfUserAlreadyRequestedByEmail(
+        email?.toLowerCase().trim() as string
+      );
+
+    if (alreadyRequested) {
+      const currentTime = Date.now();
+      const timeDifference = alreadyRequested.nextRequest - currentTime;
+
+      const thirty_min_frame =
+        alreadyRequested.nextRequest > currentTime + 30 * 60;
+
+      if (!thirty_min_frame && timeDifference > 0) {
         return new Response(null, {
-          status: 400,
-          statusText: "Invalid email address.",
+          status: HTTP_STATUS.TOO_MANY,
+          statusText: `Rate limit exceeded. Try again in ${Math.ceil(
+            timeDifference / 1000
+          )} seconds.`,
         });
       }
+    }
 
-      await connectDatabase(); // Open the database connection at the beginning
+    const _OTP = generateOTP(6);
+    const emailTemplate = requestOTPEmail(_OTP);
 
-      const alreadyRequested: requestOTPProps | null =
-        await checkIfUserAlreadyRequestedByEmail(
-          email?.toLowerCase() as string
-        );
+    const next15minutes = 60 * 15 * 1000; // 15 minutes
+    const expireTime = Date.now() + next15minutes; //The OTP should expire in the next 15Mins
 
-      if (alreadyRequested) {
-        const currentTime = Date.now();
-        const timeDifference = alreadyRequested.nextRequest - currentTime;
+    const updateOptions: requestOTPProps = {
+      otp: _OTP,
+      requestCount: (alreadyRequested?.requestCount || 0) + 1,
+      nextRequest:
+        Date.now() +
+        nextRequestTime *
+          Math.min(maxRequests, (alreadyRequested?.requestCount || 0) + 1),
+      expires: expireTime,
+      otp_for: email?.toLowerCase() as string,
+      otp_used: false,
+    };
 
-        if (timeDifference > 0) {
-          return new Response(null, {
-            status: 429,
-            statusText: `Rate limit exceeded. Try again in ${Math.ceil(
-              timeDifference / 1000
-            )} seconds.`,
-          });
-        }
-      }
+    if (alreadyRequested) {
+      await Promise.all([
+        requestOTPModel.findOneAndUpdate({ otp_for: email }, updateOptions),
+        sendEmail({
+          emailSubject: "Notification",
+          emailTemplate: emailTemplate,
+          emailTo: email as string,
+        }),
+      ]);
 
-      const _OTP = generateOTP(6);
-      const emailTemplate = requestOTPEmail(Number(_OTP));
-
-      const next15minutes = 60 * 15 * 1000; // 15 minutes
-      const expireTime = Date.now() + next15minutes;
-
-      const updateOptions: requestOTPProps = {
-        otp: Number(_OTP),
-        requestCount: (alreadyRequested?.requestCount || 0) + 1,
-        nextRequest:
-          Date.now() +
-          nextRequestTime *
-            Math.min(maxRequests, (alreadyRequested?.requestCount || 0) + 1),
-        expires: expireTime,
-        otp_for: email?.toLowerCase() as string,
+      await closeConnection();
+      return new Response(null, {
+        status: HTTP_STATUS.OK,
+        statusText: "OTP request sent successfully.",
+      });
+    } else {
+      const otpModel = new requestOTPModel<requestOTPProps>({
+        otp: _OTP,
+        otp_for: email as string,
+        requestCount: 1,
+        nextRequest: nextRequestTime + Date.now(),
         otp_used: false,
-      };
+        expires: expireTime,
+      });
 
-      if (alreadyRequested) {
-        await Promise.all([
-          requestOTPModel.findOneAndUpdate({ otp_for: email }, updateOptions),
-          sendEmail({
-            emailSubject: "Notification",
-            emailTemplate: emailTemplate,
-            emailTo: email as string,
-          }),
-        ]);
+      await Promise.all([
+        otpModel.save(),
+        sendEmail({
+          emailSubject: "Notification",
+          emailTemplate: emailTemplate,
+          emailTo: email as string,
+        }),
+      ]);
 
-        await closeConnection();
-        return new Response(null, {
-          status: 200,
-          statusText: "OTP request sent successfully.",
-        });
-      } else {
-        const otpModel = new requestOTPModel<requestOTPProps>({
-          otp: Number(_OTP),
-          otp_for: email as string,
-          requestCount: 1,
-          nextRequest: nextRequestTime + Date.now(),
-          otp_used: false,
-          expires: expireTime,
-        });
-
-        await Promise.all([
-          otpModel.save(),
-          sendEmail({
-            emailSubject: "Notification",
-            emailTemplate: emailTemplate,
-            emailTo: email as string,
-          }),
-        ]);
-
-        await closeConnection();
-        return new Response(null, {
-          status: 200,
-          statusText: "OTP request sent successfully.",
-        });
-      }
+      await closeConnection();
+      return new Response(null, {
+        status: HTTP_STATUS.OK,
+        statusText: "OTP request sent successfully.",
+      });
     }
   } catch (error) {
     // Log the error for debugging purposes.
     console.error(error);
-
     await closeConnection();
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Internal Server Error",
     });
   }
@@ -140,24 +143,24 @@ export const GET = async (req: Request) => {
   try {
     if (!otp) {
       return new Response(null, {
-        status: 403,
+        status: HTTP_STATUS.BAD,
         statusText: "Missing OTP",
       });
     }
 
     if (isNaN(Number(otp))) {
       return new Response(null, {
-        status: 403,
+        status: HTTP_STATUS.BAD,
         statusText: "Invalid OTP",
       });
     }
 
-    const checkForOTP = await checkOTP(Number(otp));
+    const checkForOTP = await checkOTP(otp);
 
     if (!checkForOTP) {
       await closeConnection();
       return new Response(null, {
-        status: 404,
+        status: HTTP_STATUS.BAD,
         statusText: "Invalid OTP",
       });
     }
@@ -165,26 +168,29 @@ export const GET = async (req: Request) => {
     if (checkForOTP.otp_for.toLowerCase() !== email?.trim().toLowerCase()) {
       await closeConnection();
       return new Response(null, {
-        status: 401,
+        status: HTTP_STATUS.UNAUTHORIZED,
         statusText: "Something went wrong",
       });
     }
 
     if (checkForOTP.expires < Date.now()) {
       await closeConnection();
-      return new Response(null, { status: 403, statusText: "OTP has expired" });
+      return new Response(null, {
+        status: HTTP_STATUS.BAD,
+        statusText: "OTP has expired",
+      });
     }
 
     await requestOTPModel.findOneAndDelete({ otp: otp });
 
     return new Response(null, {
-      status: 200,
+      status: HTTP_STATUS.OK,
       statusText: "OTP verification successful",
     });
   } catch (error) {
     await closeConnection();
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Server error",
     });
   }

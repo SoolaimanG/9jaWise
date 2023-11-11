@@ -10,6 +10,7 @@ import { toast } from "../ui/use-toast";
 
 export type networkTypes = "mtn" | "glo" | "airtel" | "9mobile";
 
+//Airtime dummy plans
 const plans = [
   {
     amount: 50,
@@ -30,7 +31,6 @@ const plans = [
     amount: 1000,
   },
 ];
-
 const airtimePlan = [
   {
     code: "MTN VTU",
@@ -51,19 +51,24 @@ const airtimePlan = [
 ];
 
 const Airtime = () => {
-  const { is_darkmode, user } = useStore();
+  const { is_darkmode, user, try_refresh } = useStore(); //Zustand States
 
-  const { phoneNumber } = user as userProps<beneficiariesProps>;
+  const { phoneNumber } = user as userProps<beneficiariesProps>; //get the user phoneNumber if available
 
+  //-------->States needed to purchase Airtime<--------
   const [number, setNumber] = useState<string | number>(
     phoneNumber ? phoneNumber : ""
   );
   const [amount, setAmount] = useState<number | string>("");
   const [vtu, setVtu] = useState<"MTN" | "GLO" | "9MOBILE" | "AIRTEL">("MTN");
   const [otp_or_password, setOtp_or_password] = useState<string | number>("");
+
+  //---------->Track states of request<--------
   const [loading, setLoading] = useState(false);
 
+  //Async Fuction to buy airtime
   const buy_airtime = async () => {
+    //------>Little Checks for Client<-------
     if ((user?.balance as number) < Number(amount)) {
       toast({
         title: `ERROR`,
@@ -72,7 +77,6 @@ const Airtime = () => {
       });
       return;
     }
-
     if (user?.suspisiousLogin) {
       toast({
         title: `ERROR`,
@@ -82,8 +86,9 @@ const Airtime = () => {
       return;
     }
 
-    setLoading(true);
+    setLoading(true); //Start loading
 
+    //payloads needed to perform operation
     const payload = {
       amount: amount,
       phone_number: number,
@@ -91,6 +96,7 @@ const Airtime = () => {
       otp_or_password: otp_or_password,
     };
 
+    //http:localhost:8080/api/flutterwave/buy-airtime that's the full API
     const res = await fetch("/api/flutterwave/buy-airtime", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -98,7 +104,6 @@ const Airtime = () => {
 
     if (!res.ok) {
       setLoading(false);
-
       toast({
         title: `ERROR ${res.status}`,
         description: res.statusText,
@@ -113,6 +118,7 @@ const Airtime = () => {
       title: "SUCCESS",
       description: res.statusText,
     });
+    try_refresh(); //Hard refresh for new user updates
   };
 
   const plan = (
@@ -189,15 +195,16 @@ const Airtime = () => {
         className="w-full h-[2.5rem]"
         borderRadius={true}
         states={loading ? "loading" : undefined}
-        name="Pay"
+        name="Buy Airtime"
         disabled={
           number.toString().length > 10 &&
           Number.isInteger(Number(number)) &&
+          !loading &&
           amount
             ? false
             : true
         }
-        varient="danger"
+        varient="filled"
         onClick={buy_airtime}
       />
     </div>

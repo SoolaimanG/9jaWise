@@ -8,6 +8,7 @@ import {
   findUserByPhoneNumber,
   userProps,
 } from "@/Models/user";
+import { HTTP_STATUS } from "../../donation/withdraw/route";
 
 export const GET = async (req: Request) => {
   const session = await getServerSession(authOptions);
@@ -19,29 +20,32 @@ export const GET = async (req: Request) => {
     });
   }
 
-  const { user } = session;
+  const {
+    user: { email },
+  } = session;
 
-  console.log(user);
+  await connectDatabase();
 
   try {
-    await connectDatabase();
+    const user: userProps<beneficiariesProps> | null =
+      (await findUserByEmail(email as string)) ||
+      (await findUserByPhoneNumber(email as string));
 
-    const findUser: userProps<beneficiariesProps> | null =
-      (await findUserByEmail(user?.email as string)) ||
-      (await findUserByPhoneNumber(user?.email as string));
-
-    if (findUser?.disableAccount) {
+    if (user?.disableAccount) {
       await closeConnection();
       return new Response(null, {
-        status: 403,
+        status: HTTP_STATUS.FORBIDDEN,
         statusText: "Account disabled",
       });
     }
 
-    return NextResponse.json({ data: findUser });
+    await closeConnection();
+    return NextResponse.json({ data: user });
   } catch (error) {
+    console.log(error);
+    await closeConnection();
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Server Error",
     });
   }

@@ -1,5 +1,6 @@
 "use client";
 
+//----------->All Imports<-------------
 import { useEffect, useState } from "react";
 import Button from "../button";
 import Input from "../input";
@@ -9,6 +10,7 @@ import Loaders from "../loaders";
 import Ask_authentication from "./ask_authentication";
 import { toast } from "../ui/use-toast";
 
+//Networks Available
 const networkType = ["MTN", "AIRTEL", "GLO", "9MOBILE"];
 
 export type billerProps = {
@@ -21,11 +23,12 @@ export type billerProps = {
 };
 
 const Data = () => {
+  //Get the categories of the bills with https://www.flutterwave.com API
   const { data, is_loading, error } = useFetchData<billerProps[]>({
-    url: "http://localhost:8000/api/flutterwave/get-bill-categories",
+    url: "http://localhost:8080/api/flutterwave/get-bill-categories",
   });
 
-  const { is_darkmode, user } = useStore();
+  const { is_darkmode, user, try_refresh } = useStore();
 
   const [phone_number, setPhone_Number] = useState<string | number>(
     user?.phoneNumber ? user.phoneNumber : ""
@@ -42,6 +45,7 @@ const Data = () => {
   const [amount, setAmount] = useState(0);
   const [otp_or_password, setOtp_or_password] = useState<string | number>("");
 
+  //Uncomponent mount or data change filter api according to user category
   useEffect(() => {
     const newData = data?.slice(5, 33);
 
@@ -66,6 +70,7 @@ const Data = () => {
     setNine_MobilePlans(filternine_moile);
   }, [data]);
 
+  //Organizing a disable function for the buy data button
   const shouldButtonBeDisabled = () => {
     return !is_loading &&
       !error &&
@@ -80,24 +85,27 @@ const Data = () => {
   };
 
   const buy_data = async () => {
-    //    if (user?.suspisiousLogin) {
-    //      toast({
-    //        title: `ERROR`,
-    //        description: "Cannot perform this action right now",
-    //        variant: "destructive",
-    //      });
-    //      return;
-    //    }
-    //
-    //    if ((user?.balance as number) < 0) {
-    //      toast({
-    //        title: `ERROR`,
-    //        description: "Insufficient Balance",
-    //        variant: "destructive",
-    //      });
-    //    }
+    //Litte Client Checks
+    if (user?.suspisiousLogin) {
+      toast({
+        title: `ERROR`,
+        description: "Cannot perform this action right now",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setLoading(true);
+    if ((user?.balance as number) < 0) {
+      toast({
+        title: `ERROR`,
+        description: "Insufficient Balance",
+        variant: "destructive",
+      });
+    }
+
+    setLoading(true); //Start loading
+
+    //payload needed to start operation
     const payload = {
       biller_code: selectPlan,
       amount: amount,
@@ -105,11 +113,13 @@ const Data = () => {
       otp: otp_or_password,
     };
 
+    //Start request
     const res = await fetch("/api/flutterwave/buy-data", {
       method: "POST",
       body: JSON.stringify(payload),
     });
 
+    //If the request !OK return by notifying the user
     if (!res.ok) {
       setLoading(false);
       toast({
@@ -125,8 +135,10 @@ const Data = () => {
       title: `SUCCESS`,
       description: res.statusText,
     });
+    try_refresh(); //Hard refresh to get updates data
   };
 
+  //Plans to filter -->HEADER<---
   const plans = (
     <div className="w-full dark:bg-slate-900 p-2 rounded-md bg-gray-100">
       <p className="text-purple-500 text-xl font-semibold">Select Data Plan</p>
@@ -271,6 +283,7 @@ const Data = () => {
     </div>
   );
 
+  //Networks to display according to the defined network above
   const networks = (
     <div className="w-full flex gap-2 items-center justify-between">
       {networkType.map((_) => (
@@ -314,12 +327,12 @@ const Data = () => {
         setValue={setOtp_or_password}
       />
       <Button
-        name="Buy"
+        name="Buy data"
         className="h-[2.5rem] w-full"
         borderRadius={true}
         states={loading ? "loading" : undefined}
         disabled={shouldButtonBeDisabled()}
-        varient="danger"
+        varient="filled"
         onClick={buy_data}
       />
     </div>

@@ -5,8 +5,7 @@ import { BsFillClipboard2CheckFill } from "react-icons/bs";
 import useClipboard from "@/Hooks/useClipboard";
 import { useToast } from "../ui/use-toast";
 import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
-import { usePathname } from "next/navigation";
-import { useGetId } from "@/Hooks/useGetId";
+import { useStore } from "@/provider";
 
 export type depositProps = {
   accountNumber: string;
@@ -23,14 +22,15 @@ const Deposit = ({
   phoneNumber,
   email,
 }: depositProps) => {
+  const { user } = useStore();
+
   const { copyToClipboard } = useClipboard();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const _id = useGetId(2);
   const [amount, setAmount] = useState<string | number>(0);
 
   const handleFlutterPayment = useFlutterwave({
-    public_key: "FLWPUBK_TEST-76b4b0f7cc0b2dec958115a5ffe55038-X",
+    public_key: process.env.FLW_SECRET_KEY!,
     tx_ref: String(Date.now()),
     amount: amount as number,
     customer: {
@@ -39,11 +39,11 @@ const Deposit = ({
       email: email || "soolaimangee@gamil.com",
     },
     meta: {
-      _id,
+      user_id: user?._id.toString(),
     },
     customizations: {
       title: "Fund Account",
-      description: `I want to fund my account with ${1000}`,
+      description: `I want to fund my account with ${amount}`,
       logo: "",
     },
     payment_options: "card,mobilemoney,ussd",
@@ -67,7 +67,7 @@ const Deposit = ({
         borderRadius={true}
         name="Use Flutterwave"
         states={loading ? "loading" : undefined}
-        disabled={!amount}
+        disabled={amount && !loading ? false : true}
         varient="danger"
         onClick={() => {
           setLoading(true);
@@ -87,6 +87,7 @@ const Deposit = ({
           <p>Account Name</p>
           <div className="flex items-center gap-2">
             <Input
+              className="capitalize"
               value={accountName}
               setValue={() => {}}
               error={false}
@@ -137,7 +138,7 @@ const Deposit = ({
           <p>Bank Name</p>
           <div className="flex items-center gap-2">
             <Input
-              value={bankName}
+              value={bankName ? "9JA WISE BANK" : ""}
               setValue={() => {}}
               error={false}
               disabled={true}

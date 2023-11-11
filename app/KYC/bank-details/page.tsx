@@ -4,19 +4,52 @@ import SlideIn from "@/components/Animations/slideIn";
 import Header from "@/components/KYC/header";
 import Button from "@/components/button";
 import Input from "@/components/input";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Modal } from "@/components/modal";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { AiFillCheckCircle } from "react-icons/ai";
+import { toast } from "@/components/ui/use-toast";
+import { useStore } from "@/provider";
 
 const BVN_Access = ["Name", "Phone Number", "Email Address", "Date of birth"];
 
 const Page = () => {
   const [bvn, setBvn] = useState<string | number>("");
   const [email, setEmail] = useState<string | number>("");
+  const [loading, setLoading] = useState(false);
 
   const router = useRouter();
-  const pathname = (usePathname() as string).split("/");
+
+  const { try_refresh } = useStore();
+
+  const add_bank_details = async () => {
+    setLoading(true);
+
+    const payload = {
+      bvn: bvn,
+      user_email: email,
+    };
+
+    const res = await fetch("/api/kyc/bank-details", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      setLoading(false);
+      toast({
+        title: `ERROR ${res.status}`,
+        description: res.statusText,
+        variant: "destructive",
+      });
+
+      return;
+    }
+
+    setLoading(false);
+    try_refresh();
+    router.push("/account/home");
+  };
 
   return (
     <div className="w-full flex flex-col gap-3 h-full">
@@ -35,7 +68,7 @@ const Page = () => {
             type="text"
             disabled={false}
             error={false}
-            placeholder="Email Address (hi@devtobs.com)"
+            placeholder="Add email if you haven't added (hi@devtobs.com)"
           />
           <Input
             value={bvn as string}
@@ -84,7 +117,8 @@ const Page = () => {
                   your bank account(s).
                 </p>
                 <span className="text-gray-500">
-                  As a matter of fact your bvn is only use here.
+                  This is only use of testing purposes you can use any number as
+                  BVN
                 </span>
               </div>
             }
@@ -101,10 +135,13 @@ const Page = () => {
             />
             <Button
               name="Complete"
-              onClick={() => {}}
-              disabled={(bvn as string).length === 11 ? false : true}
+              onClick={add_bank_details}
+              disabled={
+                (bvn as string).length === 11 && !loading ? false : true
+              }
               varient="filled"
               borderRadius={true}
+              states={loading ? "loading" : undefined}
               className="w-1/4 h-[2.5rem]"
             />
           </div>

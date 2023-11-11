@@ -23,7 +23,7 @@ const sidebar = [
   {
     name: "Records",
     icon: <GoHistory />,
-    path: "/transactions",
+    path: "/records",
   },
   {
     name: "Settings",

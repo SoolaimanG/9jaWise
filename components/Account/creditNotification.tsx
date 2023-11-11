@@ -1,7 +1,8 @@
+//----------->All Imports<----------
 import React from "react";
-import { statusProps } from "../loaders";
 import { useNairaFormatter } from "@/Hooks/useNairaFormatter";
 import { useFormatDate } from "../../Hooks/useFormatDate";
+import Link from "next/link";
 
 export type creditnotification = {
   status: "credit" | "debit";
@@ -12,9 +13,11 @@ export type creditnotification = {
 };
 
 const CreditNotification = (props: creditnotification) => {
-  const { amount, acct, time, id, status } = props;
-  const naira = useNairaFormatter(amount);
-  const date = useFormatDate(time);
+  const { amount, acct, time, id, status } = props; //Destructing creditNotification
+
+  //---------------->Custom Hooks<----------------
+  const naira = useNairaFormatter(amount); //Format to naira with this custom hoook hover to see Docs
+  const date = useFormatDate(time); //Formating date hover to see docs
 
   return (
     <div className="w-full dark:bg-slate-700 dark:text-gray-300 text-gray-500 bg-gray-100 rounded-md flex flex-col gap-3 h-fit p-2">
@@ -46,7 +49,7 @@ const CreditNotification = (props: creditnotification) => {
       <hr />
       <div className="w-full flex items-center justify-between">
         <p>{date}</p>
-        <button>view</button>
+        <Link href={`/account/records?search=${id}`}>view</Link>
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ import {
 import { closeConnection, connectDatabase } from "@/Models";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/options";
+import { HTTP_STATUS } from "../../donation/withdraw/route";
 
 // Define an enum for BillType
 export enum BillType {
@@ -43,7 +44,7 @@ export const POST = async (req: Request) => {
 
     if (!session?.user) {
       return new Response(null, {
-        status: 401,
+        status: HTTP_STATUS.UNAUTHORIZED,
         statusText: "Unauthorized (Please login)",
       });
     }
@@ -51,10 +52,6 @@ export const POST = async (req: Request) => {
     const {
       user: { email },
     } = session;
-
-    console.log(isNaN(Number(amount)));
-    console.log(phone_number);
-    console.log(network);
 
     // Input Validation
     if (
@@ -64,12 +61,10 @@ export const POST = async (req: Request) => {
     ) {
       // Return a Bad Request response if input parameters are invalid
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Invalid parameters",
       });
     }
-
-    console.log("Pass");
 
     // Connect to the database
     await connectDatabase();
@@ -83,7 +78,7 @@ export const POST = async (req: Request) => {
       // Close the database connection and return a User Not Found response
       await closeConnection();
       return new Response(null, {
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         statusText: "User not found",
       });
     }
@@ -91,7 +86,7 @@ export const POST = async (req: Request) => {
     if (user.disableAccount) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Account is disabled",
       });
     }
@@ -99,8 +94,24 @@ export const POST = async (req: Request) => {
     if (user.suspisiousLogin) {
       await closeConnection();
       return new Response(null, {
-        status: 401,
+        status: HTTP_STATUS.BAD,
         statusText: "Cannot perform this action right now",
+      });
+    }
+
+    if (user.emailVerified) {
+      await closeConnection();
+      return new Response(null, {
+        status: HTTP_STATUS.BAD,
+        statusText: "Verify email and proceed",
+      });
+    }
+
+    if (!user.account.accountNumber) {
+      await closeConnection();
+      return new Response(null, {
+        status: HTTP_STATUS.BAD,
+        statusText: "Complete KYC and proceed",
       });
     }
 
@@ -130,7 +141,7 @@ export const POST = async (req: Request) => {
       if (!checkPassword) {
         await closeConnection();
         return new Response(null, {
-          status: 429,
+          status: HTTP_STATUS.CONFLICT,
           statusText: "Incorrect Password",
         });
       }
@@ -148,29 +159,25 @@ export const POST = async (req: Request) => {
       if (hashPassword !== user_password.authentication.salt) {
         await closeConnection();
         return new Response(null, {
-          status: 429,
+          status: HTTP_STATUS.CONFLICT,
           statusText: "Incorrect Password",
         });
       }
     }
 
+    //If the user balance is not up to amount then do not allow
     if (user.balance < Number(amount)) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.CONFLICT,
         statusText: "Insufficient balance",
       });
     }
 
-    // Calculate the total funds in savings buckets
-    const totalBucketFunds = user.savings.reduce((acc, curr) => {
-      return acc + curr.amount;
-    }, 0);
-
     // Check if user's savings can cover the amount
-    if (user.balance - totalBucketFunds < Number(amount)) {
+    if (user.balance < Number(amount)) {
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Something went wrong (Cannot use savings funds)",
       });
     }
@@ -210,6 +217,7 @@ export const POST = async (req: Request) => {
       isRead: false,
       transactionID: REF_ID,
       header: "Airtime Purchase Successful",
+      billMessage: `${network} Airtime Purchase for ${phone_number} successfully`,
     };
 
     const updates: userProps<beneficiariesProps> | {} = {
@@ -219,41 +227,37 @@ export const POST = async (req: Request) => {
       logs: {
         ...user.logs,
         totalEmailSent: user.logs.totalEmailSent + 1,
+        lastTransaction: {
+          tran_type: "debit",
+          amount: Number(amount),
+        },
       },
     };
 
     // Execute a series of asynchronous actions
-    await Promise.all([
-      fetch("https://api.flutterwave.com/v3/bills", {
-        method: "POST",
-        headers: {
-          Authorization: process.env.FLW_PUBLIC_KEY as string,
-        },
-        body: JSON.stringify(options),
-      }),
-      UserModel.findByIdAndUpdate(user._id.toString(), updates),
+    await UserModel.findByIdAndUpdate(user._id.toString(), updates).then(() => {
       // Send an email to the user
       sendEmail({
         emailSubject: "Airtime Purchase successful",
         emailTemplate: email_template,
         emailTo: user.email as string,
-      }),
-    ]);
+      });
+    });
 
     // Close the database connection
     await closeConnection();
 
     // Return a successful response
     return new Response(null, {
-      status: 200,
-      statusText: `Airtime purchased for ${phone_number}: ${network}}`,
+      status: HTTP_STATUS.OK,
+      statusText: `Airtime purchased for ${phone_number}: ${network}`,
     });
   } catch (error) {
     await closeConnection();
     // Log and return an Internal Server Error response in case of an exception
     console.error(error);
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Internal Server Error",
     });
   }

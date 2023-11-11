@@ -1,3 +1,4 @@
+//----------->All Imports<-----------
 import TextStreamer from "@/Functions/TSX/textStream";
 import { motion } from "framer-motion";
 import { SetStateAction } from "react";
@@ -7,42 +8,39 @@ export interface responseProps {
   options?: string[];
   chatBotImage?: string;
 }
-
 type personalResProps = {
   query?: string;
-  funcCall: () => void;
   setQuery: React.Dispatch<SetStateAction<string | number>>;
+};
+//------->Framer Motion [For animating the button]<---------
+const containerVariant = {
+  hidden: {
+    opacity: 0,
+    y: 40,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      staggerChildren: 0.5,
+      stiffness: 0.3,
+      duration: 0.35,
+    },
+  },
+};
+const buttonVarient = {
+  hidden: {
+    opacity: 0,
+    y: 40,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+  },
 };
 
 const Response = (props: responseProps & personalResProps) => {
-  const { reply, options, setQuery, chatBotImage, funcCall } = props;
-
-  const containerVariant = {
-    hidden: {
-      opacity: 0,
-      y: 40,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        staggerChildren: 0.5,
-        stiffness: 0.3,
-        duration: 0.35,
-      },
-    },
-  };
-
-  const buttonVarient = {
-    hidden: {
-      opacity: 0,
-      y: 40,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-    },
-  };
+  const { reply, options, setQuery, chatBotImage } = props;
 
   return (
     <div className="w-full relative flex gap-1">
@@ -54,8 +52,8 @@ const Response = (props: responseProps & personalResProps) => {
         />
       )}
       <div className="w-full flex flex-col gap-2">
-        <div className="w-fit p-2 cursor-pointer text-white bg-purple-700 rounded-b-md rounded-tr-md">
-          <TextStreamer text={reply} speed={90} />
+        <div className="w-fit p-2 cursor-pointer text-white bg-purple-500 rounded-b-xl rounded-tr-xl">
+          <TextStreamer text={reply} speed={15} />
         </div>
         <motion.div
           animate="visible"
@@ -66,12 +64,9 @@ const Response = (props: responseProps & personalResProps) => {
           {(options?.length as number) > 1 &&
             options?.map((_, i) => (
               <motion.button
-                onClick={() => {
-                  setQuery(_);
-                  funcCall();
-                }}
+                onClick={() => setQuery(_)}
                 variants={buttonVarient}
-                className="w-fit p-1 text-[0.9rem] bg-purple-900 rounded-md text-white"
+                className="w-fit px-2 py-1 text-[0.9rem] bg-purple-900 rounded- text-white"
                 key={i}
               >
                 {_}

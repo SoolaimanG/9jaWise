@@ -2,6 +2,7 @@ import React, { FormEvent, SetStateAction } from "react";
 import Input from "../input";
 import Button from "../button";
 import { useCheck } from "@/Hooks/useCheck";
+import { useSearchParams } from "next/navigation";
 
 export type stageOneProps = {
   loginMode: "phoneNumber" | "email";
@@ -30,7 +31,7 @@ const StageOne: React.FC<stageOneProps> = ({
   setFullName,
   setLoginMode,
 }) => {
-  const checkEmail = useCheck(email, "email");
+  const checkEmail = useCheck(email, "email"); //Custom hook to check email validity
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

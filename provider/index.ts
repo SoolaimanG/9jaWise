@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { create } from "zustand";
 
 type conversationProps = {
-  id: number;
+  id: string;
   user: string | null;
   chatBot: responseProps | null;
 };
@@ -22,7 +22,11 @@ export interface donationProps {
     amount: number;
     date: Date;
   }[];
-  user_id: string;
+  donation_account: {
+    account_number: string;
+    account_name: string;
+    bank_name: string;
+  };
 }
 export type savingProps = {
   _id: mongoose.Types.ObjectId | string;
@@ -46,12 +50,12 @@ export type stateProps = {
 export type actionProps = {
   setIs_darkmode: (value: boolean) => void;
   addConversation: (props: conversationProps) => void;
-  updateConversation: (props: number, chatBot: responseProps) => void;
+  updateConversation: (props: string, chatBot: responseProps) => void;
   clearChat: () => void;
   addKYC_steps: (props: number[]) => void;
   addSaving: (props: savingProps) => void;
   deleteSaving: (id: string) => void;
-  setUser: (props: userProps<beneficiariesProps>) => void;
+  setUser: (props: userProps<beneficiariesProps> | null) => void;
   addDonation: (props: donationProps) => void;
   delete_donation: (id: string) => void;
   try_refresh: () => void;

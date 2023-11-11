@@ -21,6 +21,10 @@ export type bankResProps = {
 
 const popularBanks = [
   {
+    name: "9JA WISE BANK",
+    account_bank: "01",
+  },
+  {
     name: "Access Bank",
     account_bank: "044",
   },
@@ -31,10 +35,6 @@ const popularBanks = [
   {
     name: "First Bank Of Nigeria",
     account_bank: "011",
-  },
-  {
-    name: "GT Bank",
-    account_bank: "058",
   },
   {
     name: "Zenith Bank",

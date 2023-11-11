@@ -7,6 +7,7 @@ import { BiMoney } from "react-icons/bi";
 import SheetComp from "../sheet";
 import { useStore } from "@/provider";
 import Receipt from "../receipt";
+import { SheetClose } from "../ui/sheet";
 
 const History_comp = ({
   name,
@@ -15,6 +16,8 @@ const History_comp = ({
   type,
   status,
   refID,
+  transactionFrom,
+  transactionTo,
 }: historyProps) => {
   const naira = useNairaFormatter(amount);
   const d = useFormatDate(date);
@@ -43,17 +46,17 @@ const History_comp = ({
   return (
     <SheetComp
       button={
-        <div className="w-full sm:w-[30rem] p-2 ease-linear transition-all hover:dark:bg-slate-700 hover:bg-white cursor-pointer flex items-center justify-between ">
+        <div className="w-full rounded-sm sm:w-[30rem] p-2 ease-linear transition-all hover:dark:bg-slate-700 hover:bg-white cursor-pointer flex items-center justify-between ">
           <div className="flex items-center gap-3">
             {name_first_letter}
             <div className="flex flex-col">
-              <p className="text-lg">{name}</p>
-              <span className="capitalize text-[0.79rem] text-gray-500 dark:text-gray-400">
-                {type}
+              <p className="text-lg capitalize">{name}</p>
+              <span className="font-semibold md:text-[0.8rem] text-base">
+                {d}
               </span>
             </div>
           </div>
-          <span className="font-semibold md:text-[0.8rem] text-base">{d}</span>
+
           <p
             className={`text-base ${
               type === "credit" ? "text-green-600" : " text-red-600"
@@ -69,7 +72,7 @@ const History_comp = ({
             is_darkmode ? "glassmorph_darkmode" : "glassmorph"
           } px-1 py-2`}
         >
-          <span className="">{<AiOutlineArrowLeft />}</span>
+          <SheetClose className="">{<AiOutlineArrowLeft />}</SheetClose>
           <p className="w-full flex items-center justify-center text-2xl">
             Transaction Details
           </p>
@@ -78,11 +81,12 @@ const History_comp = ({
     >
       <div className="w-full p-3">
         <Receipt
+          key={refID}
           status={status}
           amount={amount}
-          refNumber={Number(refID)}
-          receiver=""
-          sender=""
+          refNumber={refID}
+          receiver={transactionTo as string}
+          sender={transactionFrom as string}
           payment_type={type}
           payment_time={date}
         />

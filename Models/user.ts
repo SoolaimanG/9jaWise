@@ -2,6 +2,7 @@ import { statusProps } from "@/components/loaders";
 import { donationProps, savingProps } from "@/provider";
 import mongoose, { models, model, Schema } from "mongoose"; // Importing necessary modules from mongoose
 import { connectDatabase } from ".";
+import { subaccountTypes } from "@/components/Account/subAccounts";
 
 export type transactiontypes = "debit" | "credit" | "airtime" | "bill payments";
 
@@ -45,7 +46,7 @@ export type beneficiariesProps = {
   accountName: string;
   accountNumber: string;
   bankName: string;
-  account_bank?: string;
+  account_bank: string;
 };
 
 // Define the userProps interface
@@ -84,6 +85,7 @@ export interface userProps<T> {
       nok: string;
     };
     marital_status: "single" | "married";
+    date_of_birth: Date | null;
   };
   account: {
     accountNumber: number | null;
@@ -115,7 +117,7 @@ export interface userProps<T> {
     answer: string;
   };
   notifications: notificationsProps[];
-  bulkAccountsCreated: [];
+  bulkAccountsCreated: subaccountTypes[];
   occupation: string;
   KYC_completed: boolean;
   kyc_steps: kyc_steps[];
@@ -173,6 +175,7 @@ const UserSchema = new Schema<userProps<beneficiariesProps>>({
       type: String,
       enum: ["single", "married"],
     },
+    date_of_birth: { type: Date, default: null },
   },
   backupCodes: {
     backupCode_i: { type: String, select: false },

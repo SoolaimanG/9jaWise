@@ -77,7 +77,7 @@ const Features = () => {
     <motion.section
       id="features"
       ref={ref}
-      className="w-full px-5 relative h-screen mt-5 md:h-fit sm:h-fit"
+      className="w-full px-5 relative h-screen mt-10 md:h-fit sm:h-fit"
     >
       <div
         className="absolute inset-x-0 top-20 -z-10 transform-gpu overflow-hidden blur-3xl"
@@ -121,9 +121,7 @@ const Features = () => {
             <motion.div
               variants={item}
               key={feature.id}
-              className={`w-full ${
-                is_darkmode ? "hoverGlassmorph" : "hoverGlassmorph_light"
-              } transition-all ease-linear delay-75 cursor-pointer flex items-start justify-start flex-col gap-2`}
+              className={`w-full transition-all ease-linear delay-75 cursor-pointer flex items-start justify-start flex-col gap-2`}
             >
               <span className="p-2 text-white text-3xl gradient-one rounded-md">
                 {feature.icon}
@@ -138,9 +136,12 @@ const Features = () => {
         <motion.div
           animate={inView ? "visible" : "hidden"}
           variants={container}
-          className="w-full flex items-center justify-center relative"
+          className="w-full flex items-center  justify-center relative"
         >
-          <motion.div variants={item} className="z-10 cursor-pointer w-full">
+          <motion.div
+            variants={item}
+            className="cursor-pointer md:hidden sm:hidden w-full"
+          >
             <DebitCard
               type="glassmorphism"
               name="DevTobs"
@@ -150,7 +151,7 @@ const Features = () => {
           </motion.div>
           <motion.div
             variants={item}
-            className="absolute md:hidden sm:hidden w-full rotate-90 bottom-[40%] left-[5%]"
+            className="absolute md:relative sm:relative z-10 w-full rotate-90 bottom-[40%] md:bottom-0 md:left-0 sm:left-0 sm:bottom-0 left-[5%]"
           >
             <DebitCard
               type="color"
@@ -169,9 +170,7 @@ const Features = () => {
             <motion.div
               variants={item}
               key={feature.id}
-              className={`w-full flex transition-all ease-linear delay-75 ${
-                is_darkmode ? "hoverGlassmorph" : "hoverGlassmorph_light"
-              }  cursor-pointer md:items-start sm:items-start md:justify-start sm:justify-start items-end justify-end flex-col gap-2`}
+              className={`w-full flex cursor-pointer md:items-start sm:items-start md:justify-start sm:justify-start items-end justify-end flex-col gap-2`}
             >
               <span className="p-2 text-white text-3xl gradient-two rounded-md">
                 {feature.icon}

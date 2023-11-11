@@ -1,3 +1,5 @@
+//------------>All Imports<-----------
+
 import { billPayment } from "@/Emails/email";
 import { hashText, random, sendEmail } from "@/Functions/TS";
 import { connectDatabase, closeConnection } from "@/Models";
@@ -14,6 +16,7 @@ import {
 } from "@/Models/user";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/options";
+import { HTTP_STATUS } from "../../donation/withdraw/route";
 
 export const POST = async (req: Response) => {
   try {
@@ -26,11 +29,12 @@ export const POST = async (req: Response) => {
     }: { amount: number; number: string; biller_code: string; otp?: string } =
       await req.json();
 
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions); //NEXTAUTH [Getting the current user session]
 
+    //This is if the user is not authenticated
     if (!session?.user) {
       return new Response(null, {
-        status: 401,
+        status: HTTP_STATUS.UNAUTHORIZED,
         statusText: "Unauthorized (Please login)",
       });
     }
@@ -42,22 +46,13 @@ export const POST = async (req: Response) => {
     // Check if required data is provided
     if (!biller_code || !number) {
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Bad Request",
       });
     }
 
     // Generate a random reference ID
     const REF_ID = random(10);
-
-    // Prepare payload for the payment request
-    const payload = {
-      country: "NG",
-      customer: number,
-      type: biller_code,
-      amount: amount,
-      reference: REF_ID,
-    };
 
     // Connect to the database
     await connectDatabase();
@@ -67,6 +62,7 @@ export const POST = async (req: Response) => {
       (await findUserByEmail(email as string)) ||
       (await findUserByPhoneNumber(email as string));
 
+    //If the user is not found
     if (!user) {
       await closeConnection();
       return new Response(null, {
@@ -75,6 +71,7 @@ export const POST = async (req: Response) => {
       });
     }
 
+    //When the user account is disable
     if (user.disableAccount) {
       await closeConnection();
       return new Response(null, {
@@ -83,14 +80,33 @@ export const POST = async (req: Response) => {
       });
     }
 
+    //User have'nt verify email address return
+    if (!user.emailVerified) {
+      await closeConnection();
+      return new Response(null, {
+        status: HTTP_STATUS.FORBIDDEN,
+        statusText: "Verify your email address",
+      });
+    }
+
+    if (!user.account.accountNumber) {
+      await closeConnection();
+      return new Response(null, {
+        status: HTTP_STATUS.BAD,
+        statusText: "Complete KYC and proceed",
+      });
+    }
+
+    //when ths user login in and it's a suspious login do not allow operation
     if (user.suspisiousLogin) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Cannot perform this action",
       });
     }
 
+    //Perform this acction according to what the user set
     if (
       user.settings.send_otp_for_each_transaction &&
       user.loginType === "otp"
@@ -127,16 +143,17 @@ export const POST = async (req: Response) => {
       if (user_with_password.authentication.password !== hashPassword) {
         await closeConnection();
         return new Response(null, {
-          status: 401,
+          status: HTTP_STATUS.CONFLICT,
           statusText: "Incorrect Password",
         });
       }
     }
 
+    //Not transaction should be perform if the amount is like less than or is 10
     if (amount <= 10) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: `Cannot buy data of N${amount}`,
       });
     }
@@ -145,25 +162,21 @@ export const POST = async (req: Response) => {
     if (user.balance < amount) {
       await closeConnection();
       return new Response(null, {
-        status: 429,
+        status: HTTP_STATUS.CONFLICT,
         statusText: "Insufficient funds",
       });
     }
 
-    // Calculate the total funds in savings buckets
-    const totalBucketFunds = user.savings.reduce((acc, curr) => {
-      return acc + curr.amount;
-    }, 0);
-
-    // Check if user's savings can cover the amount
-    if (user.balance - totalBucketFunds < amount) {
+    // Check if user's balance can cover the amount
+    if (user.balance < amount) {
       await closeConnection();
       return new Response(null, {
-        status: 429,
+        status: HTTP_STATUS.BAD,
         statusText: "Something went wrong (Cannot use savings funds)",
       });
     }
 
+    //Create a new history -->Transaction history
     const history: historyProps = {
       type: "bill payments",
       amount: Number(amount),
@@ -173,23 +186,26 @@ export const POST = async (req: Response) => {
       name: "Data Payment",
     };
 
+    //Create a new user notification
     const new_notification: notificationsProps = {
       type: "bill",
-      billMessage: "",
+      billMessage: `Data purchase for ${number} is successfully`,
       time: Date.now(),
       isRead: false,
       amount: amount,
+      transactionID: REF_ID,
     };
 
     // Create a payment confirmation email
     const email_template = billPayment({
       name: user.username,
-      billAmount: 0,
+      billAmount: amount,
       accounNumber: String(user.account.accountNumber),
       transaction_id: REF_ID,
       billType: "Data",
     });
 
+    //updates for user properties in the DB
     const updates: userProps<beneficiariesProps> | {} = {
       history: [...user.history, history],
       notifications: [...user.notifications, new_notification],
@@ -204,34 +220,25 @@ export const POST = async (req: Response) => {
       },
     };
 
-    // Perform necessary updates and notifications
-
-    await fetch("https://api.flutterwave.com/v3/bills", {
-      method: "POST",
-      headers: {
-        Authorization: String(process.env.FLW_SECRET_KEY),
-      },
-      body: JSON.stringify(payload),
-    }).then(() => {
-      UserModel.findByIdAndUpdate(user._id.toString(), updates),
-        sendEmail({
-          emailSubject: "Data purchase successful",
-          emailTemplate: email_template,
-          emailTo: user.email as string,
-        });
-    });
-
-    // Close the database connection
-    await closeConnection();
-
+    // Find the user in the data base and updates the with the new DB
+    await UserModel.findByIdAndUpdate(user._id.toString(), updates).then(() => {
+      sendEmail({
+        //Send email using STMP transporter ---> NODEMAILER
+        emailSubject: "Data purchase successful",
+        emailTemplate: email_template,
+        emailTo: user.email as string,
+      });
+    }),
+      // Close the database connection
+      await closeConnection();
     return new Response(null, {
-      status: 200,
+      status: HTTP_STATUS.OK,
       statusText: "Data Purchase Successful",
     });
   } catch (error) {
     await closeConnection();
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Internal Server Error",
     });
   }

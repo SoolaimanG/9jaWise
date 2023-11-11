@@ -1,3 +1,4 @@
+//---------->All Imports<----------
 import { billPayment } from "@/Emails/email";
 import { hashText, random, sendEmail } from "@/Functions/TS";
 import { closeConnection, connectDatabase } from "@/Models";
@@ -14,6 +15,7 @@ import {
 } from "@/Models/user";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/options";
+import { HTTP_STATUS } from "../../donation/withdraw/route";
 
 export type buyTvProps = {
   biller_name: string;
@@ -33,11 +35,11 @@ export const POST = async (req: Request) => {
     });
   }
 
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions); //NEXTAUTH to get the current user session
 
   if (!session?.user) {
     return new Response(null, {
-      status: 401,
+      status: HTTP_STATUS.UNAUTHORIZED,
       statusText: "Unauthorized (Please Login)",
     });
   }
@@ -46,7 +48,7 @@ export const POST = async (req: Request) => {
     user: { email },
   } = session;
 
-  await connectDatabase();
+  await connectDatabase(); //Connect to DB and all closeConnection is to close the database connection as the name implies
 
   try {
     const user: userProps<beneficiariesProps> | null =
@@ -56,21 +58,21 @@ export const POST = async (req: Request) => {
     if (!user) {
       await closeConnection();
       return new Response(null, {
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         statusText: "User not found",
       });
     }
 
     if (user.disableAccount) {
       return new Response(null, {
-        status: 401,
+        status: HTTP_STATUS.UNAUTHORIZED,
         statusText: "Account is disabled",
       });
     }
 
     if (user.suspisiousLogin) {
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Cannot perform this action right now",
       });
     }
@@ -112,7 +114,7 @@ export const POST = async (req: Request) => {
         await closeConnection();
 
         return new Response(null, {
-          status: 429,
+          status: HTTP_STATUS.CONFLICT,
           statusText: "Incorrect password",
         });
       }
@@ -121,25 +123,22 @@ export const POST = async (req: Request) => {
     if (user.balance < amount) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Insufficient Balance",
       });
     }
 
-    const total_savings = user.savings.reduce((acc, cur) => {
-      return acc + cur.amount;
-    }, 0);
-
-    if (user.balance - total_savings < amount) {
+    if (user.balance < amount) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Something went wrong (Cannot use savings)",
       });
     }
 
     const ref_id = random(10);
 
+    //Notify the user with this email template
     const email_template = billPayment({
       name: "Tv",
       billAmount: amount,
@@ -148,13 +147,7 @@ export const POST = async (req: Request) => {
       transaction_id: ref_id,
     });
 
-    const payload = {
-      country: "NG",
-      customer: user.email || user.phoneNumber,
-      amount: amount,
-      type: biller_name,
-    };
-
+    //---> New transaction history
     const history_props: historyProps = {
       type: "bill payments",
       amount: amount,
@@ -164,13 +157,16 @@ export const POST = async (req: Request) => {
       name: "TV",
     };
 
+    //--->New notification
     const new_notification: notificationsProps = {
       type: "bill",
       billMessage: `You make a bill payment of ${amount} (TV)`,
       amount: amount,
       time: Date.now(),
+      transactionID: ref_id,
     };
 
+    //User updates --->
     const update: userProps<beneficiariesProps> | {} = {
       history: [...user.history, history_props],
       balance: user.balance - amount,
@@ -185,31 +181,23 @@ export const POST = async (req: Request) => {
       },
     };
 
-    await fetch("https://api.flutterwave.com/v3/bills", {
-      method: "POST",
-      headers: {
-        Authorization: String(process.env.FLW_SECRET_KEY),
-      },
-      body: JSON.stringify(payload),
-    }).then(() => {
-      UserModel.findByIdAndUpdate(user._id.toString(), update),
-        sendEmail({
-          emailSubject: "Payment For Tv Completed",
-          emailTemplate: email_template,
-          emailTo: user.email as string,
-        });
-    });
+    await UserModel.findByIdAndUpdate(user._id.toString(), update),
+      sendEmail({
+        emailSubject: "Payment For Tv Completed",
+        emailTemplate: email_template,
+        emailTo: user.email as string,
+      });
 
     await closeConnection();
     return new Response(null, {
-      status: 200,
+      status: HTTP_STATUS.OK,
       statusText: "Payment Successful",
     });
   } catch (error) {
     console.log(error);
     await closeConnection();
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Internal Server Error",
     });
   }

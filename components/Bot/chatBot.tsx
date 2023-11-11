@@ -1,6 +1,6 @@
 "use client";
 
-import { SiChatbot } from "react-icons/si";
+//------------>All Imports<--------------
 import { SheetClose } from "../ui/sheet";
 import { MdArrowBackIosNew } from "react-icons/md";
 import SheetComp from "../sheet";
@@ -12,13 +12,19 @@ import Instructions from "./instructions";
 import { AnimatePresence, motion } from "framer-motion";
 import Response, { responseProps } from "./response";
 import BotLoading from "./botLoading";
-import { useGetId } from "@/Hooks/useGetId";
+import { v4 as uuidv4 } from "uuid";
+import BotError from "./botError";
 
+//Types Used
 type modeProps = {
   name: string;
   mode: "ASK-QUESTION" | "CUSTOMER-SERVICE" | "CREATE-ACCOUNT";
 };
-
+enum ChatBot_Constant {
+  chat_bot_name = "BAGUE",
+  chat_bot_status = "ONLINE",
+  chat_bot_image = "https://i.ibb.co/bXkqZ45/peeps-avatar-6-1.png",
+}
 export type accountProps = {
   phoneNumber: null | number;
   email: null | string;
@@ -30,48 +36,67 @@ export type accountProps = {
   accountType: string;
 };
 
-const ChatBot = () => {
-  const chatBotAvatar = "https://i.ibb.co/bXkqZ45/peeps-avatar-6-1.png";
-  const pathname = useGetId(1);
-  const modes: modeProps[] = [
-    {
-      name: "About 9jaWise",
-      mode: "ASK-QUESTION",
-    },
-    {
-      name: "Create Account",
-      mode: "CREATE-ACCOUNT",
-    },
-    {
-      name: "Customer Service",
-      mode: "CUSTOMER-SERVICE",
-    },
-  ];
+//Motion Variants
+const containerVariant = {
+  hidden: { opacity: 0, y: 100 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { staggerChildren: 0.3, duration: 0.7 },
+  },
+};
+const eachItemVariant = {
+  hidden: { opacity: 0, y: 100 },
+  visible: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: 100 },
+};
 
-  const [currentMode, setCurrentMode] = useState<
-    "CUSTOMER-SERVICE" | "ASK-QUESTION" | "CREATE-ACCOUNT"
-  >("ASK-QUESTION");
+const modes: modeProps[] = [
+  {
+    name: "About 9jaWise",
+    mode: "ASK-QUESTION",
+  },
+  {
+    name: "Create Account",
+    mode: "CREATE-ACCOUNT",
+  },
+  {
+    name: "Customer Service",
+    mode: "CUSTOMER-SERVICE",
+  },
+];
+
+const ChatBot = ({
+  button,
+  mode,
+}: {
+  button: React.ReactNode;
+  mode: "CUSTOMER-SERVICE" | "ASK-QUESTION" | "CREATE-ACCOUNT";
+}) => {
   const {
     is_darkmode,
     conversation,
     updateConversation,
     addConversation,
     clearChat,
-  } = useStore();
-  const [userQuery, setUserQuery] = useState<number | string>("");
+  } = useStore(); //Global Store from Zustand
+
+  //------>Dirrent Type of Mode User can chhose<-------
+  const [currentMode, setCurrentMode] = useState<
+    "CUSTOMER-SERVICE" | "ASK-QUESTION" | "CREATE-ACCOUNT"
+  >(mode);
+
+  //------>Track the request and the response from the server<------
   const [state, setState] = useState<{
     loading: boolean;
-    error: "not-found" | "server error" | "innappropriate message" | null;
+    error: null | string;
   }>({
     loading: false,
     error: null,
   });
-  const abortRef = useRef<AbortController | null>(null);
-  const scrollingRef = useRef<HTMLDivElement | null>(null);
-  const divRef = useRef<HTMLDivElement | null>(null);
-  const [showModes, setShowModes] = useState(false);
-  const [inputType, setInputType] = useState<"password" | "text">("text");
 
+  //---------->Tracking when user is opening an account<----------
+  const [account_process, setAccount_process] = useState<number>(0);
   const [accountCreationDetails, setAccountCreationDetails] =
     useState<accountProps>({
       phoneNumber: null,
@@ -83,71 +108,75 @@ const ChatBot = () => {
       fullName: "",
       accountType: "PERSONAL",
     });
-  const [accountSteps, setAccountSteps] = useState<number>(0);
+  //------------>Chat Bot Inputs<-----------
+  const [showModes, setShowModes] = useState(false);
+  const [inputType, setInputType] = useState<"password" | "text">("text");
+  const [userQuery, setUserQuery] = useState<number | string>("");
 
+  //Refs used for scrolling and aborting request -->
+  const abortRef = useRef<AbortController | null>(null);
+  const scrollingRef = useRef<HTMLDivElement | null>(null);
+  const divRef = useRef<HTMLDivElement | null>(null);
+
+  //----->Base on if darkmode is toggle select background<-----
   const background = is_darkmode
     ? "headerBackground_dark"
     : "headerBackground_light";
 
-  //Motion Variants
-  const containerVariant = {
-    hidden: { opacity: 0, y: 100 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { staggerChildren: 0.3, duration: 0.7 },
-    },
-  };
-  const eachItemVariant = {
-    hidden: { opacity: 0, y: 100 },
-    visible: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: 100 },
-  };
-
-  const sendRequest = () => {
+  //A Async func to send request to the data base for processing
+  const sendRequest = (
+    e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>
+  ) => {
+    e?.preventDefault();
+    //If user did not enter an input return
     if (!userQuery) {
       return;
     }
 
-    const toLowerCase = (userQuery as string).toLowerCase();
-    setUserQuery("");
+    setUserQuery(""); //Clear request to avoid sending multiple request
+    const user_request_toLowercase = String(userQuery).toLowerCase().trim();
 
     //Clear chat if user request to
-    if (toLowerCase === "clear" || toLowerCase === "reset") {
-      setAccountSteps(0);
+    if (
+      user_request_toLowercase === "clear" ||
+      user_request_toLowercase === "reset"
+    ) {
+      setAccount_process(0);
       clearChat();
       return;
     }
 
-    if (toLowerCase === "modes") {
-      return setShowModes(true);
-    }
-
+    if (user_request_toLowercase === "modes") return setShowModes(true);
     setState({ ...state, loading: true });
-    abortRef.current?.abort();
 
-    abortRef.current = new AbortController();
+    abortRef.current?.abort(); //Abort previous request if its not yet completed
+    abortRef.current = new AbortController(); //Create a new controller signal
 
-    const ID = Date.now();
+    const chat_id = uuidv4(); //Create unique chat Id
 
+    //A user input to chat and start request
     addConversation({
-      id: ID,
+      id: chat_id,
       user: userQuery as string,
       chatBot: null,
     });
+
+    const payload = {
+      mode: currentMode,
+      message: userQuery as string,
+    };
 
     switch (currentMode) {
       case "ASK-QUESTION":
         //Send request to the server
         fetch("/api/chat-bot", {
           method: "POST",
-          body: JSON.stringify({ message: userQuery, mode: currentMode }),
-          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
           signal: abortRef.current?.signal,
         })
           .then(async (response) => {
             const res = await response.json();
-            console.log(res);
+
             //Send this as payloads to zustannd state
             const props: responseProps = {
               reply: res[0]?.response,
@@ -155,23 +184,10 @@ const ChatBot = () => {
             };
 
             if (response.ok) {
-              updateConversation(ID, props);
+              updateConversation(chat_id, props);
               setState({ ...state, error: null });
             } else {
-              const errorCodes = {
-                404: "not-found",
-                500: "server error",
-                403: "innappropriate message",
-              };
-
-              if (
-                response.status === 404 ||
-                response.status === 403 ||
-                response.status === 500
-              ) {
-                //@ts-ignore
-                setState({ ...state, error: errorCodes[response.status] });
-              }
+              setState({ ...state, error: response.statusText });
             }
           })
           .finally(() => setState({ ...state, loading: false }));
@@ -183,12 +199,11 @@ const ChatBot = () => {
           body: JSON.stringify({
             message: userQuery,
             mode: currentMode,
-            id: accountSteps,
+            id: account_process,
             accountProps: {
               ...accountCreationDetails,
             },
           }),
-          headers: { "Content-Type": "application/json" },
           signal: abortRef.current?.signal,
         })
           .then(async (response) => {
@@ -207,13 +222,13 @@ const ChatBot = () => {
               });
             }
 
-            setAccountSteps(res[0].index);
+            setAccount_process(res[0].index);
 
             if (response.ok) {
-              updateConversation(ID, props);
+              updateConversation(chat_id, props);
               setState({ ...state, error: null });
             } else {
-              updateConversation(ID, props);
+              setState({ ...state, error: response.statusText });
             }
           })
           .finally(() => setState({ ...state, loading: false }));
@@ -234,28 +249,14 @@ const ChatBot = () => {
             };
 
             if (response.ok) {
-              updateConversation(ID, props);
+              updateConversation(chat_id, props);
               setState({ ...state, error: null });
             } else {
-              const errorCodes = {
-                404: "not-found",
-                500: "server error",
-                403: "innappropriate message",
-              };
-
-              if (
-                response.status === 404 ||
-                response.status === 403 ||
-                response.status === 500
-              ) {
-                //@ts-ignore
-                setState({ ...state, error: errorCodes[response.status] });
-              }
+              setState({ ...state, error: response.statusText });
             }
           })
           .finally(() => setState({ ...state, loading: false }));
         break;
-
       default:
         break;
     }
@@ -263,13 +264,19 @@ const ChatBot = () => {
     setShowModes(false);
   };
 
+  //Using this to scroll to the bottom when the conversion changes when user input or chatbot response
   useEffect(() => {
-    //Scroll to bottom
     divRef.current?.scrollTo({
       behavior: "smooth",
       top: (scrollingRef.current?.clientHeight as number) + 100,
     });
   }, [conversation]);
+
+  /**
+   * A useEffect for keeping an eye on the change happening which userQuery which is the user Input
+   */
+
+  console.log(accountCreationDetails);
 
   useEffect(() => {
     setInputType("text");
@@ -279,7 +286,7 @@ const ChatBot = () => {
     }
     // Setting the properties using just one state (will be checking for the index)
     setAccountCreationDetails((prevDetails) => {
-      switch (accountSteps) {
+      switch (account_process) {
         case 3:
           return {
             ...prevDetails,
@@ -300,7 +307,6 @@ const ChatBot = () => {
           setInputType("password");
           return {
             ...prevDetails,
-            otp: userQuery as string,
             password: userQuery as string,
           };
         case 8:
@@ -326,142 +332,123 @@ const ChatBot = () => {
   }, [userQuery]);
 
   return (
-    pathname !== "account" && (
-      <div className={`fixed z-30 bottom-3 right-3`}>
-        <SheetComp
-          button={
-            <span className="w-14 h-14 cursor-pointer rounded-full text-white bg-purple-600 flex items-center justify-center shadow-lg">
-              <SiChatbot size={25} />
-            </span>
-          }
-          header={
-            <header
-              className={`w-full z-10 ${background} absolute top-0 left-0 p-3 border-b-[1.2px] border-solid border-gray-200 cursor-pointer justify-between flex items-center`}
-            >
-              <SheetClose>
-                <MdArrowBackIosNew className="p-[2px]" size={15} />
-              </SheetClose>
-              <div className="flex flex-col items-center gap-1">
-                <p className="text-xl">Bague</p>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-green-600" />
-                  <p className="dark:text-gray-300 text-[0.9rem] text-slate-700">
-                    Online
-                  </p>
-                </div>
-              </div>
-              <img
-                src={chatBotAvatar}
-                alt="avatar"
-                className="w-[3rem] h-[3rem] rounded-full"
-              />
-            </header>
-          }
-          children={
-            <div
-              ref={divRef}
-              className="pt-24 overflow-auto pb-24 h-full w-full"
-            >
-              {/* INSTRUCTIONS */}
-              {conversation.length === 0 && <Instructions />}
-              {/* User query */}
-              {
-                <div
-                  ref={scrollingRef}
-                  className={`w-full flex px-2 flex-col gap-3`}
-                >
-                  {conversation.map((c, i) => (
-                    <div key={i}>
-                      {c.user && (
-                        <div className="w-full flex items-end justify-end">
-                          <p className="w-fit p-2 cursor-pointer text-purple-800 bg-purple-300 rounded-t-md rounded-bl-md">
-                            {c.user}
-                          </p>
-                        </div>
-                      )}
-                      {c.chatBot ? (
-                        <div className="w-full mt-1 flex flex-col gap-2 items-start justify-start">
-                          <Response
-                            query={userQuery as string}
-                            setQuery={setUserQuery}
-                            funcCall={sendRequest}
-                            reply={c.chatBot.reply}
-                            options={c.chatBot.options}
-                            chatBotImage={chatBotAvatar}
-                          />
-                        </div>
-                      ) : (
-                        <BotLoading />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              }
-              {/* Input Section */}
-              <div className="absolute z-10 w-full left-0 bottom-0">
-                {/* Modes */}
-                {(conversation.length === 0 || showModes) && (
-                  <AnimatePresence>
-                    <motion.div
-                      animate="visible"
-                      initial="hidden"
-                      exit="hidden"
-                      variants={containerVariant}
-                      className="w-full gap-2 px-2 pb-1 flex items-center justify-between"
-                    >
-                      {modes.map((m, i) => (
-                        <motion.button
-                          variants={eachItemVariant}
-                          //@ts-ignore
-                          onClick={() => setCurrentMode(m.mode)}
-                          className={`w-full ${
-                            m.mode === currentMode
-                              ? "bg-purple-700 text-white"
-                              : "bg-purple-100 text-purple-700"
-                          } p-2 rounded-md hover:bg-purple-700 hover:text-white`}
-                          key={i}
-                        >
-                          {m.name}
-                        </motion.button>
-                      ))}
-                    </motion.div>
-                  </AnimatePresence>
-                )}
-                {state.error && (
-                  <motion.div
-                    animate={{ opacity: 1, y: 0 }}
-                    initial={{ opacity: 0, y: -40 }}
-                    className="flex w-fit border text-red-500 border-red-700 items-center p-1 rounded-md glassmorph justify-center"
-                  >
-                    Something went wrong {state.error}
-                  </motion.div>
-                )}
-                <div
-                  className={`w-full ${background} p-2 md:px-2 sm:px-2 sm:py-3 md:py-3 flex gap-1 items-center `}
-                >
-                  <Input
-                    value={userQuery}
-                    setValue={setUserQuery}
-                    type={inputType}
-                    error={false}
-                    disabled={false}
-                    className="w-full"
-                    placeholder="Bague ready to answer your questions"
-                  />
-                  <button
-                    disabled={state.loading}
-                    onClick={sendRequest}
-                    className="p-3 disabled:bg-purple-500 disabled:cursor-pointer rounded-md bg-purple-700 text-white"
-                  >
-                    <IoMdSend size={15} />
-                  </button>
-                </div>
+    <div className={`w-full`}>
+      <SheetComp
+        button={button}
+        header={
+          <header
+            className={`w-full z-10 ${background} absolute top-0 left-0 p-3 border-b-[1.2px] border-solid border-gray-200 cursor-pointer justify-between flex items-center`}
+          >
+            <SheetClose>
+              <MdArrowBackIosNew className="p-[2px]" size={15} />
+            </SheetClose>
+            <div className="flex flex-col items-center gap-1">
+              <p className="text-xl">{ChatBot_Constant.chat_bot_name}</p>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-600" />
+                <p className="dark:text-gray-300 text-[0.9rem] text-slate-700">
+                  {ChatBot_Constant.chat_bot_status}
+                </p>
               </div>
             </div>
-          }
-        />
-      </div>
-    )
+            <img
+              src={ChatBot_Constant.chat_bot_image}
+              alt="avatar"
+              className="w-[3rem] h-[3rem] rounded-full"
+            />
+          </header>
+        }
+        children={
+          <div ref={divRef} className="pt-24 overflow-auto pb-24 h-full w-full">
+            {conversation.length === 0 && <Instructions />}
+            {
+              <div
+                ref={scrollingRef}
+                className={`w-full flex px-2 flex-col gap-3`}
+              >
+                {conversation.map((c, i) => (
+                  <div key={i}>
+                    {c.user && (
+                      <div className="w-full flex items-end justify-end">
+                        <p className="w-fit text-white p-2 cursor-pointer bg-purple-300 rounded-t-xl rounded-bl-xl">
+                          {c.user}
+                        </p>
+                      </div>
+                    )}
+                    {c.chatBot ? (
+                      <div className="w-full mt-1 flex flex-col gap-2 items-start justify-start">
+                        <Response
+                          query={userQuery as string}
+                          setQuery={setUserQuery}
+                          reply={c.chatBot.reply}
+                          options={c.chatBot.options}
+                          chatBotImage={ChatBot_Constant.chat_bot_image}
+                        />
+                      </div>
+                    ) : (
+                      <BotLoading />
+                    )}
+                  </div>
+                ))}
+              </div>
+            }
+            {/* Input Section */}
+            <div className="absolute z-10 w-full left-0 bottom-0">
+              {/* Modes */}
+              {(conversation.length === 0 || showModes) && (
+                <AnimatePresence>
+                  <motion.div
+                    animate="visible"
+                    initial="hidden"
+                    exit="hidden"
+                    variants={containerVariant}
+                    className="w-full gap-2 px-2 pb-1 flex items-center justify-between"
+                  >
+                    {modes.map((m, i) => (
+                      <motion.button
+                        variants={eachItemVariant}
+                        //@ts-ignore
+                        onClick={() => setCurrentMode(m.mode)}
+                        className={`w-full ${
+                          m.mode === currentMode
+                            ? "bg-purple-700 text-white"
+                            : "bg-purple-100 text-purple-700"
+                        } p-2 rounded-md w-full sm:h-[4rem] md:h-[4rem] hover:bg-purple-700 hover:text-white`}
+                        key={i}
+                      >
+                        {m.name}
+                      </motion.button>
+                    ))}
+                  </motion.div>
+                </AnimatePresence>
+              )}
+              <BotError error={state.error} />
+              <form
+                onSubmit={sendRequest}
+                className={`w-full ${background} p-2 md:px-2 sm:px-2 sm:py-3 md:py-3 flex gap-1 items-center `}
+              >
+                <Input
+                  value={userQuery}
+                  setValue={setUserQuery}
+                  type={inputType}
+                  error={false}
+                  disabled={false}
+                  className="w-full"
+                  placeholder="Bague ready to answer your questions"
+                />
+                <button
+                  disabled={state.loading}
+                  onClick={sendRequest}
+                  className="p-3 disabled:bg-purple-500 disabled:cursor-pointer rounded-md bg-purple-700 text-white"
+                >
+                  <IoMdSend size={15} />
+                </button>
+              </form>
+            </div>
+          </div>
+        }
+      />
+    </div>
   );
 };
 

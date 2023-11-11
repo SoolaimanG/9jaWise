@@ -1,3 +1,4 @@
+//-------------->All Imports<-------------
 import React, { useEffect, useState } from "react";
 import Input from "../input";
 import Button from "../button";
@@ -7,7 +8,6 @@ import { toast } from "../ui/use-toast";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { ToastAction } from "@radix-ui/react-toast";
-import { useCheck } from "@/Hooks/useCheck";
 
 export type otpLoginProps = {
   loginMode: "otp" | "password";
@@ -33,6 +33,7 @@ const OtpLogin: React.FC<otpLoginProps> = ({ loginMode }) => {
       body: JSON.stringify(payload),
     });
 
+    //if the OTP request is !OK notify the user
     if (!res.ok) {
       //
       setRequestSent("failed");
@@ -48,7 +49,8 @@ const OtpLogin: React.FC<otpLoginProps> = ({ loginMode }) => {
     setLoading(false);
     setRequestSent("sent");
     toast({
-      title: res.statusText,
+      title: "SUCCESS",
+      description: res.statusText,
     });
   };
 
@@ -56,10 +58,9 @@ const OtpLogin: React.FC<otpLoginProps> = ({ loginMode }) => {
     setLoading(true);
     const res = await signIn("credentials", {
       redirect: false,
-      callbackUrl: "/",
       loginID: loginID,
       otp: otp,
-      password: "",
+      password: "", //Password not needed here since its OTP login
       loginMode: "otp",
     });
 
@@ -78,8 +79,8 @@ const OtpLogin: React.FC<otpLoginProps> = ({ loginMode }) => {
       return;
     }
 
-    setLoading(false);
-    route.push(`/account/home`);
+    setLoading(false); //Stop Loading
+    route.push(`/account/home`); //Navigate user to account/home i.e Home Page if successfull login
   };
 
   useEffect(() => {
@@ -93,23 +94,27 @@ const OtpLogin: React.FC<otpLoginProps> = ({ loginMode }) => {
       <p className="text-2xl sm:text-xl text-center text-purple-500">
         Sign in with One-Time-Passcode.
       </p>
-      <Input
-        value={loginID}
-        setValue={setLoginID}
-        disabled={false}
-        type="text"
-        error={false}
-        placeholder="Email or Phone Number"
-      />
-      <div className="w-full flex items-center gap-1">
+      <div className="w-full">
         <Input
-          value={otp}
-          setValue={setOTP}
-          disabled={loading}
+          value={loginID}
+          setValue={setLoginID}
+          disabled={false}
           type="text"
-          error={requestSent === "failed"}
-          placeholder="OTP"
+          error={false}
+          placeholder="Email or Phone Number"
         />
+      </div>
+      <div className="w-full flex items-center gap-1">
+        <div className="w-full">
+          <Input
+            value={otp}
+            setValue={setOTP}
+            disabled={loading}
+            type="text"
+            error={requestSent === "failed"}
+            placeholder="OTP"
+          />
+        </div>
         <Button
           className="w-fit px-4 h-[2.5rem]"
           name="Request"

@@ -71,10 +71,11 @@ export const verifyPhoneNumber = async (phoneNumber: string) => {
   }
 };
 
-const images = {
-  male: "https://i.ibb.co/1qGLDnY/peeps-avatar-7-2.png",
-  female: "https://i.ibb.co/6XQd7nx/peeps-avatar-8-1.png",
-};
+//ENUM as Constant
+export enum images {
+  male = "https://i.ibb.co/1qGLDnY/peeps-avatar-7-2.png",
+  female = "https://i.ibb.co/6XQd7nx/peeps-avatar-8-1.png",
+}
 
 // Main function to handle sign-up requests
 export const POST = async (req: Request) => {
@@ -124,8 +125,9 @@ export const POST = async (req: Request) => {
 
   // Check if the user already exists
   const user: userProps<beneficiariesProps> | null =
-    (await findUserByEmail(email.toLowerCase())) ||
-    (await findUserByPhoneNumber(phoneNumber.toLowerCase()));
+    loginType === "email"
+      ? await findUserByEmail(email.toLowerCase())
+      : await findUserByPhoneNumber(phoneNumber.toLowerCase());
 
   // Generate backup codes
   const backupCode_i = random(12);
@@ -136,9 +138,7 @@ export const POST = async (req: Request) => {
     await closeConnection();
     return new Response(null, {
       status: 400,
-      statusText: `User with the identifier ${
-        email || phoneNumber
-      } already exists`,
+      statusText: `User with this identifier already exists`,
     });
   }
 
@@ -177,7 +177,7 @@ export const POST = async (req: Request) => {
     const user: userProps<beneficiariesProps> = {
       _id: new mongoose.Types.ObjectId(),
       email: email,
-      emailVerified: false,
+      emailVerified: true,
       suspisiousLogin: false,
       username: firstname.toLowerCase(),
       fullName: firstname.toLowerCase() + " " + lastname.toLowerCase(),
@@ -234,6 +234,7 @@ export const POST = async (req: Request) => {
           nok: "",
         },
         marital_status: "single",
+        date_of_birth: null,
       },
       bulkAccountsCreated: [],
       BVN: {
@@ -241,7 +242,7 @@ export const POST = async (req: Request) => {
         salt: "",
       },
       KYC_completed: false,
-      kyc_steps: ["first"],
+      kyc_steps: [],
       authentication: {
         salt: "",
         password: "",
@@ -269,11 +270,14 @@ export const POST = async (req: Request) => {
       ...user,
     });
 
-    console.log("Creating");
-    // Create user if user passes all checks and save recovery phrases
+    // Create user if user passes all checks
     try {
       await new_user.save();
-
+      await sendEmail({
+        emailSubject: "Account Creation Successful",
+        emailTemplate: emailTemplate,
+        emailTo: email,
+      });
       //await closeConnection();
       return new Response(null, {
         status: 200,
@@ -406,6 +410,7 @@ export const POST = async (req: Request) => {
           nok: "",
         },
         marital_status: "single",
+        date_of_birth: null,
       },
       bulkAccountsCreated: [],
       BVN: {
@@ -413,7 +418,7 @@ export const POST = async (req: Request) => {
         salt: "",
       },
       KYC_completed: false,
-      kyc_steps: ["first"],
+      kyc_steps: [],
       authentication: {
         salt: salt,
         password: hashPassword,

@@ -1,3 +1,4 @@
+//------------->All Imports<-------------
 import { useStore } from "@/provider";
 import Link from "next/link";
 import { BsArrowRight } from "react-icons/bs";
@@ -5,14 +6,16 @@ import { useInView } from "react-intersection-observer";
 import { motion } from "framer-motion";
 
 const SignUp = () => {
-  const { is_darkmode } = useStore();
+  const { is_darkmode } = useStore(); //Darkmode from zustand
+
+  //This inView is from react-intersection-observer for knowing when an element enter or leave the viewport
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.3,
   });
   return (
     <motion.section
-      ref={ref}
+      ref={ref} //Refrence to this div -->Keep an eye on this element to know whether it leaves or enter the view
       className="w-full flex md:px-5 sm:px-5 items-center justify-center h-[50vh] sm:h-fit md:h-fit"
     >
       <motion.div
@@ -24,7 +27,9 @@ const SignUp = () => {
               }
             : { y: 300 }
         }
-        className={`flex md:flex-col sm:flex-col items-center px-3 py-4 justify-center gap-2 border border-white text-white signUpGradient w-[80%] md:w-full sm:w-full m-auto h-[80%] rounded-md`}
+        className={`flex md:flex-col sm:flex-col items-center px-3 py-4 justify-center gap-2 border border-white text-white ${
+          is_darkmode ? "gradient-one" : "gradient-two"
+        } w-[80%] md:w-full sm:w-full m-auto h-[80%] rounded-md`}
       >
         <div className="w-[70%] md:w-full sm:w-full flex flex-col gap-2">
           <motion.h2
@@ -50,8 +55,8 @@ const SignUp = () => {
           </motion.p>
         </div>
         <Link
-          href={"/"}
-          className="flex items-center w-[20%] md:w-full sm:w-full py-2  justify-center gap-1 cursor-pointer text-xl rounded-xl gradient-one"
+          href={"/auth/signup"}
+          className="flex items-center w-[20%] md:w-full sm:w-full py-2  justify-center gap-1 cursor-pointer text-xl rounded-md gradient-one"
         >
           Get Started
           <BsArrowRight />

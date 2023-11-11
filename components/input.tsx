@@ -15,6 +15,7 @@ type inputProps = {
   password_strength?: passwordStrength;
   className?: string;
   setValue: React.Dispatch<SetStateAction<string | number>>;
+  label?: string;
 };
 
 /**
@@ -35,6 +36,7 @@ const Input = (props: inputProps) => {
     password_strength,
     setValue,
     className,
+    label,
   } = props;
 
   /**
@@ -54,15 +56,20 @@ const Input = (props: inputProps) => {
   const [focused, setFocused] = useState(false);
 
   return (
-    <>
+    <div className={`${label && "flex flex-col gap-1"} w-full`}>
+      {label && (
+        <label className="w-full text-gray-400 dark:text-gray-300 flex items-start justify-start">
+          {label}
+        </label>
+      )}
       <div
         onBlur={() => setFocused(false)}
         onClick={() => setFocused(true)}
-        className={`px-1 w-full ${className} flex gap-1 ${
+        className={`px-1 w-full flex gap-1 ${
           disabled && "bg-gray-100 text-gray-500 border-gray-500"
         } items-center border ${
           error
-            ? "bg-red-100 border-red-500"
+            ? "bg-red-100 text-red-600 border-red-500"
             : ` ${focused ? "border-purple-500" : "border-gray-500"} ${
                 color ? "bg-purple-100" : "bg-white dark:bg-slate-700"
               }`
@@ -74,8 +81,10 @@ const Input = (props: inputProps) => {
           onChange={handleChange}
           disabled={disabled}
           placeholder={placeholder || ""}
-          className={`outline-none pl-1 disabled:cursor-not-allowed bg-transparent w-full h-[2.5rem] ${
-            color ? "dark:text-purple-600" : "dark:text-white"
+          className={`outline-none pl-1 ${className} disabled:cursor-not-allowed bg-transparent w-full h-[2.5rem] ${
+            color
+              ? "dark:text-purple-600"
+              : `${error ? "text-red-500" : "dark:text-white"}`
           } rounded-md`}
           type={type === "number" ? "text" : type}
         />
@@ -90,7 +99,7 @@ const Input = (props: inputProps) => {
           {value.toString().length}/{max}
         </span>
       )}
-    </>
+    </div>
   );
 };
 

@@ -4,7 +4,8 @@ import SlideIn from "@/components/Animations/slideIn";
 import Header from "@/components/KYC/header";
 import Button from "@/components/button";
 import Input from "@/components/input";
-import { usePathname, useRouter } from "next/navigation";
+import { toast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
 const Page = () => {
@@ -13,9 +14,38 @@ const Page = () => {
   const [streetAddress, setStreetAddress] = useState<string | number>("");
   const [nextOfKin, setNextOfKin] = useState<string | number>("");
   const [nok_name, setNok_name] = useState<string | number>("");
+  const [loading, setLoading] = useState(false);
 
   const router = useRouter();
-  const pathname = (usePathname() as string).split("/");
+
+  const add_id_details = async () => {
+    setLoading(true);
+    const payload = {
+      state: state,
+      street_address: streetAddress,
+      city: city,
+      nextOfKin: nextOfKin,
+      nokName: nok_name,
+    };
+
+    const res = await fetch("/api/kyc/id-details", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      setLoading(false);
+      toast({
+        title: `ERROR ${res.status}`,
+        description: res.statusText,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(false);
+    router.push("/KYC/bank-details");
+  };
 
   return (
     <div className="w-full flex flex-col gap-3 h-full">
@@ -77,13 +107,19 @@ const Page = () => {
             />
             <Button
               name="Proceed"
-              onClick={() => router.push(`/KYC/${pathname[2]}/bank-details`)}
+              onClick={add_id_details}
               disabled={
-                streetAddress && nextOfKin && nok_name && city && state
+                streetAddress &&
+                nextOfKin &&
+                nok_name &&
+                city &&
+                state &&
+                !loading
                   ? false
                   : true
               }
               varient="filled"
+              states={loading ? "loading" : undefined}
               borderRadius={true}
               className="w-1/4 h-[2.5rem]"
             />

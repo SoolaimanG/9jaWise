@@ -13,24 +13,25 @@ import {
 } from "@/Models/user";
 import { hashText, sendEmail } from "@/Functions/TS";
 import { withdrawFromBucket } from "@/Emails/email";
+import { HTTP_STATUS } from "../../donation/withdraw/route";
 
 //Withdraw HTTP @POST request
 export const POST = async (req: Request) => {
   const {
-    id,
+    name,
     amount,
     password,
     otp,
   }: {
-    id: string | number;
+    name: string;
     amount: number;
     password?: string;
     otp?: string | number;
   } = await req.json();
 
-  if (!id && !amount) {
+  if (!name && !amount) {
     return new Response(null, {
-      status: 404,
+      status: HTTP_STATUS.NOT_FOUND,
       statusText: "Missing Parameters",
     });
   }
@@ -39,7 +40,7 @@ export const POST = async (req: Request) => {
 
   if (!session?.user) {
     return new Response(null, {
-      status: 401,
+      status: HTTP_STATUS.UNAUTHORIZED,
       statusText: "Authentication required",
     });
   }
@@ -57,7 +58,7 @@ export const POST = async (req: Request) => {
     if (!user) {
       await closeConnection();
       return new Response(null, {
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         statusText: "User not found",
       });
     }
@@ -65,38 +66,47 @@ export const POST = async (req: Request) => {
     if (user.suspisiousLogin) {
       await closeConnection();
       return new Response(null, {
-        status: 403,
+        status: HTTP_STATUS.BAD,
         statusText: "Cannot perform this action right now",
       });
     }
 
+    if (user.disableAccount) {
+      await closeConnection();
+      return new Response(null, {
+        status: HTTP_STATUS.BAD,
+        statusText: "Account is disabled",
+      });
+    }
+
     const saving = user.savings.find((save) => {
-      return save._id === id;
+      return save.name.trim().toLowerCase() === name.trim().toLowerCase();
     });
 
     if (!saving) {
       await closeConnection();
       return new Response(null, {
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         statusText: "Bucket does not exist",
+      });
+    }
+
+    const current_time = Date.now();
+    const saving_date = new Date(saving.date);
+
+    if (!saving.allow_withdraw && saving_date.getTime() > current_time) {
+      await closeConnection();
+      return new Response(null, {
+        status: HTTP_STATUS.BAD,
+        statusText: `Cannot withdraw savings until ${saving.date.toISOString()}`,
       });
     }
 
     if (saving.amount < amount) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Not enough bucket balance",
-      });
-    }
-
-    const current_time = Date.now();
-
-    if (!saving.allow_withdraw && saving.date.getTime() > current_time) {
-      await closeConnection();
-      return new Response(null, {
-        status: 403,
-        statusText: `Cannot withdraw savings until ${saving.date.toISOString()}`,
       });
     }
 
@@ -114,7 +124,7 @@ export const POST = async (req: Request) => {
         if (hash_password !== user.authentication.password) {
           await closeConnection();
           return new Response(null, {
-            status: 400,
+            status: HTTP_STATUS.BAD,
             statusText: "Incorrect password",
           });
         }
@@ -128,16 +138,16 @@ export const POST = async (req: Request) => {
         if (!res.ok) {
           await closeConnection();
           return new Response(null, {
-            status: 400,
-            statusText: "Invalid OTP",
+            status: res.status,
+            statusText: res.statusText,
           });
         }
       }
     }
 
     const all_savings = user.savings.map((save) => {
-      return save._id === id
-        ? { ...save, amount: save.amount - amount }
+      return save._id === saving._id
+        ? { ...save, amount: save.amount - Number(amount) }
         : { ...save };
     });
 
@@ -155,6 +165,7 @@ export const POST = async (req: Request) => {
     });
 
     const updates: userProps<beneficiariesProps> | {} = {
+      balance: user.balance + Number(amount),
       savings: all_savings,
       notifications: [...user.notifications, new_notifications],
       logs: {
@@ -174,13 +185,14 @@ export const POST = async (req: Request) => {
 
     await closeConnection();
     return new Response(null, {
-      status: 200,
+      status: HTTP_STATUS.OK,
       statusText: "Withdraw successfull",
     });
   } catch (error) {
+    console.log(error);
     await closeConnection();
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Internal Server Error",
     });
   }

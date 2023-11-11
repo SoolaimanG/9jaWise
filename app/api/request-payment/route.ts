@@ -10,6 +10,8 @@ import {
 } from "@/Models/user";
 import { closeConnection, connectDatabase } from "@/Models";
 import { sendEmail } from "@/Functions/TS";
+import { request_payment_email } from "@/Emails/email";
+import { HTTP_STATUS } from "../donation/withdraw/route";
 
 type requestPaymentTypes = {
   id: string;
@@ -23,7 +25,7 @@ export const POST = async (req: Request) => {
 
   if (!session?.user) {
     return new Response(null, {
-      status: 401,
+      status: HTTP_STATUS.UNAUTHORIZED,
       statusText: "Unauthorized (Please Login)",
     });
   }
@@ -42,49 +44,98 @@ export const POST = async (req: Request) => {
     if (!user) {
       await closeConnection();
       return new Response(null, {
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         statusText: "User not found",
       });
     }
 
-    if (user.disableAccount) {
+    if (
+      String(user.account.accountNumber) === id ||
+      user.email === id ||
+      user.username === id
+    ) {
       await closeConnection();
       return new Response(null, {
-        status: 401,
+        status: HTTP_STATUS.BAD,
+        statusText: "Cannot request money from yourself",
+      });
+    }
+
+    const {
+      disableAccount,
+      suspisiousLogin,
+      account,
+      kyc_steps,
+      KYC_completed,
+    } = user;
+
+    if (disableAccount) {
+      await closeConnection();
+      return new Response(null, {
+        status: HTTP_STATUS.UNAUTHORIZED,
         statusText: "Account is disabled",
       });
     }
 
-    if (user.suspisiousLogin) {
+    if (suspisiousLogin) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Cannot Perform This Action Right Now",
+      });
+    }
+
+    if (kyc_steps.length < 3 && !account.accountNumber && !KYC_completed) {
+      await closeConnection();
+      return new Response(null, {
+        status: HTTP_STATUS.FORBIDDEN,
+        statusText: "Complete KYC and proceed",
       });
     }
 
     const user_to_request: userProps<beneficiariesProps> | null =
       (await findUserByEmail(id)) ||
       (await UserModel.findOne({ username: id })) ||
-      (await UserModel.findOne({ "account.account_number": id }));
+      (await UserModel.findOne({ "account.accountNumber": id }));
 
     if (!user_to_request) {
       await closeConnection();
       return new Response(null, {
-        status: 404,
-        statusText: "User not found",
+        status: HTTP_STATUS.NOT_FOUND,
+        statusText: `Cannot find user ${id}`,
       });
     }
 
     if (user_to_request.disableAccount) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: `${id} account has been disabled`,
       });
     }
 
-    const email_template = "";
+    if (
+      !user_to_request.account.accountNumber &&
+      !user_to_request.KYC_completed &&
+      user_to_request.kyc_steps.length < 3
+    ) {
+      await closeConnection();
+      return new Response(null, {
+        status: HTTP_STATUS.CONFLICT,
+        statusText: `${id} has not completed KYC`,
+      });
+    }
+
+    const email_template = request_payment_email(
+      user_to_request.username,
+      user.username,
+      Number(amount),
+      {
+        account_name: account.accountName as string,
+        account_number: String(account.accountNumber),
+        bank_name: account.accountBank as string,
+      }
+    );
 
     const user_request_notification: notificationsProps = {
       time: Date.now(),
@@ -137,14 +188,14 @@ export const POST = async (req: Request) => {
 
     await closeConnection();
     return new Response(null, {
-      status: 200,
+      status: HTTP_STATUS.OK,
       statusText: "Request Sent Successfully",
     });
   } catch (error) {
     console.log(error);
     await closeConnection();
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Internal Server Error",
     });
   }

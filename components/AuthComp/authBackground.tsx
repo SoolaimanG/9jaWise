@@ -6,11 +6,12 @@ import { BsShieldFillCheck } from "react-icons/bs";
 import { FiUserPlus } from "react-icons/fi";
 import DebitCard from "../debitCard";
 import SlideIn from "../Animations/slideIn";
-import { usePathname } from "next/navigation";
 import { useGetId } from "@/Hooks/useGetId";
+import { useStore } from "@/provider";
 
 const AuthBackground = () => {
   const pathname = useGetId(2) as string;
+  const { is_darkmode } = useStore();
 
   return (
     <div className="w-full h-full flex items-center flex-col gap-2 justify-center signUpGradient">
@@ -23,7 +24,7 @@ const AuthBackground = () => {
             <FiUserPlus />
           </span>
           <DebitCard
-            type="glassmorphism"
+            type={is_darkmode ? "color" : "glassmorphism"}
             name="SuleimanG"
             accountNumber={8088362315}
             balance={1000}

@@ -10,6 +10,7 @@ import {
   userProps,
 } from "@/Models/user";
 import mongoose from "mongoose";
+import { HTTP_STATUS } from "../../donation/withdraw/route";
 
 export const POST = async (req: Request) => {
   const { loginID }: { loginID: string } = await req.json();
@@ -30,7 +31,7 @@ export const POST = async (req: Request) => {
   if (!user) {
     await closeConnection();
     return new Response(null, {
-      status: 404,
+      status: HTTP_STATUS.NOT_FOUND,
       statusText: "User not found",
     });
   }
@@ -38,7 +39,7 @@ export const POST = async (req: Request) => {
   if (user.disableAccount) {
     await closeConnection();
     return new Response(null, {
-      status: 401,
+      status: HTTP_STATUS.BAD,
       statusText: "Your account has been disabled",
     });
   }
@@ -46,7 +47,7 @@ export const POST = async (req: Request) => {
   if (user.loginMode === "phoneNumber") {
     await closeConnection();
     return new Response(null, {
-      status: 401,
+      status: HTTP_STATUS.BAD,
       statusText:
         "Cannot send login link to Phone Number at the moment (Please contact support Soolaimangee@gmail.com)",
     });
@@ -55,7 +56,7 @@ export const POST = async (req: Request) => {
   if (user.loginType === "otp") {
     await closeConnection();
     return new Response(null, {
-      status: 429,
+      status: HTTP_STATUS.CONFLICT,
       statusText: "Conflict this is not your authentication flow",
     });
   }
@@ -74,7 +75,7 @@ export const POST = async (req: Request) => {
   const _ID = new mongoose.Types.ObjectId();
 
   const email_template = reset_password_email(
-    `${process.env.NEXTAUTH_URL}/auth/change-password/${_ID}`
+    `${process.env.NEXTAUTH_URL}/auth/change-password/${_ID.toString()}`
   );
 
   const expiry_time = 15 * 60 + Date.now();
@@ -100,14 +101,14 @@ export const POST = async (req: Request) => {
 
     await closeConnection();
     return new Response(null, {
-      status: 200,
-      statusText: "OK",
+      status: HTTP_STATUS.OK,
+      statusText: "An Email has been sent to you with instructions",
     });
   } catch (error) {
     console.log(error);
     await closeConnection();
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Interval Server Error",
     });
   }

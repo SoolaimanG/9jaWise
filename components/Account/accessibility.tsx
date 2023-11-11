@@ -1,5 +1,6 @@
 "use client";
 
+//------------------------>All Imports<------------------------
 import React, { useState } from "react";
 import DebitCard from "../debitCard";
 import Button from "../button";
@@ -14,45 +15,14 @@ import More from "./more";
 import { useScreenSize } from "@/Hooks/useScreenSize";
 import { useStore } from "@/provider";
 
-const testData = [
-  {
-    accountNumber: "1234567890",
-    accountName: "John Doe",
-    bankName: "Zenith Bank",
-  },
-  {
-    accountNumber: "9876543210",
-    accountName: "Jane Smith",
-    bankName: "Eco Bank",
-  },
-  {
-    accountNumber: "5555555555",
-    accountName: "Alice Johnson",
-    bankName: "Wema Bank",
-  },
-  {
-    accountNumber: "8888888888",
-    accountName: "Bob Anderson",
-    bankName: "Wema Bank",
-  },
-  {
-    accountNumber: "7777777777",
-    accountName: "Eve Wilson",
-    bankName: "Access Bank",
-  },
-  {
-    accountNumber: "9999999999",
-    accountName: "Charlie Brown",
-    bankName: "Opay",
-  },
-];
-
 const Accessibility = () => {
+  const { x } = useScreenSize(); //A custom hook for reading the screen size use client X and client Y coordinates
+  const { user } = useStore(); //User Properties from Zustand State
+
+  //Using this for the tabs of SEND | DEPOSIT and MORE
   const [quickAction, setQuickAction] = useState<"send" | "deposit" | "more">(
     "send"
   );
-  const { x } = useScreenSize();
-  const { user } = useStore();
 
   return (
     <div className="w-full h-full overflow-auto">
@@ -61,6 +31,7 @@ const Accessibility = () => {
           My Card
         </SlideIn>
         <DebitCard
+          hideBalance={user?.settings?.hidebalance}
           className="w-full"
           accountNumber={user?.account.accountNumber as number | null}
           name={user?.account.accountName || (user?.username as string)}
@@ -102,14 +73,12 @@ const Accessibility = () => {
         <div className="w-full py-3 mt-3">
           <SlideFromBelow key={quickAction}>
             {quickAction === "send" ? (
-              <QuickTrf beneficiaries={testData} />
+              <QuickTrf />
             ) : quickAction === "deposit" ? (
               <Deposit
-                accountName={user?.account.accountName as string}
-                accountNumber={
-                  user?.account.accountNumber?.toString() as string
-                }
-                bankName={user?.account.accountBank as string}
+                accountName={String(user?.account.accountName)}
+                accountNumber={String(user?.account.accountNumber)}
+                bankName={String(user?.account.accountBank)}
               />
             ) : (
               <More />

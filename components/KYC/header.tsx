@@ -8,10 +8,8 @@ const Header = () => {
   const { KYC_steps, addKYC_steps } = useStore();
   const pathname = (usePathname() as string).split("/");
 
-  console.log(pathname);
-
   useEffect(() => {
-    switch (pathname[3]) {
+    switch (pathname[2]) {
       case "personal-details":
         addKYC_steps([1]);
         break;
@@ -25,7 +23,7 @@ const Header = () => {
       default:
         break;
     }
-  }, [pathname[3]]);
+  }, [pathname[2]]);
 
   return (
     <div className="w-full flex gap-7 items-center px-3 justify-between">

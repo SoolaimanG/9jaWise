@@ -1,22 +1,21 @@
 import { billPayment } from "@/Emails/email";
-import { countEmails, hashText, random, sendEmail } from "@/Functions/TS";
+import { hashText, sendEmail } from "@/Functions/TS";
 import { closeConnection, connectDatabase } from "@/Models";
 import {
   UserModel,
   beneficiariesProps,
   findUserByEmail,
   findUserByEmail_Password,
-  findUserById,
   findUserByPhoneNumber,
   findUserByPhoneNumber_Password,
   historyProps,
   notificationsProps,
-  pushNotification,
-  updateBalance,
   userProps,
 } from "@/Models/user";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/options";
+import { HTTP_STATUS } from "../../donation/withdraw/route";
+import { v4 as uuidv4 } from "uuid";
 
 export type powerProps = {
   company: string;
@@ -34,11 +33,11 @@ export const POST = async (req: Request) => {
     otp,
   }: powerProps & { otp: string } = await req.json();
 
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions); //Get session from NEXT-AUTH to check if the user has login
 
   if (!session?.user) {
     return new Response(null, {
-      status: 401,
+      status: HTTP_STATUS.UNAUTHORIZED,
       statusText: "Unauthorized (Please Login)",
     });
   }
@@ -54,12 +53,12 @@ export const POST = async (req: Request) => {
     !meter_number
   ) {
     return new Response(null, {
-      status: 404,
+      status: HTTP_STATUS.NOT_FOUND,
       statusText: "Missing required parameters",
     });
   }
 
-  await connectDatabase();
+  await connectDatabase(); //Establish connection with database
 
   try {
     const user: userProps<beneficiariesProps> | null =
@@ -69,7 +68,7 @@ export const POST = async (req: Request) => {
     if (!user) {
       await closeConnection();
       return new Response(null, {
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         statusText: "User not found",
       });
     }
@@ -111,55 +110,48 @@ export const POST = async (req: Request) => {
         await closeConnection();
 
         return new Response(null, {
-          status: 429,
+          status: HTTP_STATUS.CONFLICT,
           statusText: "Incorrect password",
         });
       }
     }
 
+    //if the user balance is not enough to not allow
     if (user.balance < amount || user.balance <= 10) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
-        statusText: "Insufficient Balance",
+        status: HTTP_STATUS.BAD,
+        statusText:
+          "Something went wrong (Insufficient funds or amount to low)",
       });
     }
 
-    const total_savings = user.savings.reduce((acc, cur) => {
-      return acc + cur.amount;
-    }, 0);
-
-    if (user.balance - total_savings < amount) {
+    if (user.balance < amount) {
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Savings cannot be withdraw yet",
       });
     }
 
-    const ID = random(20);
+    const ref_id = uuidv4(); //Get a unique string as the ref_if of the transaction
 
-    const payload = {
-      country: "NG",
-      customer: meter_number,
-      amount: amount,
-      type: company,
-      reference: ID,
-    }; //TODO:add payload
-
+    //Ready the history to update the user in DB ---->Transaction history
     const history_props: historyProps = {
       type: "bill payments",
       amount: amount,
-      refID: ID,
+      refID: ref_id,
       status: "complete",
       date: new Date().getTime(),
       name: "Electricity",
     };
 
+    //User new notification
     const new_notification: notificationsProps = {
       type: "bill",
       billMessage: `You made a bill payment of ${amount} (POWER)`,
       time: Date.now(),
-      transactionID: ID,
+      transactionID: ref_id,
+      amount: amount,
     };
 
     const updates: userProps<beneficiariesProps> | {} = {
@@ -176,40 +168,33 @@ export const POST = async (req: Request) => {
       },
     };
 
+    //Email template for notify the user
     const email_template = billPayment({
       name: user.username,
       billAmount: amount,
       billType: "Bill",
       accounNumber: user.account.accountNumber as number,
-      transaction_id: ID,
+      transaction_id: ref_id,
     });
 
-    await fetch(`https://api.flutterwave.com/v3/bills`, {
-      method: "POST",
-      headers: {
-        Authorization: String(process.env.FLW_SECRET_KEY),
-      },
-      body: JSON.stringify(payload),
-    }).then(() => {
-      UserModel.findByIdAndUpdate(user._id, updates),
-        sendEmail({
-          emailSubject: "Bill Payment Successful",
-          emailTemplate: email_template,
-          emailTo: user.email as string,
-        });
-    });
-
-    await closeConnection();
+    await UserModel.findByIdAndUpdate(user._id, updates).then(() => {
+      sendEmail({
+        emailSubject: "Bill Payment Successful",
+        emailTemplate: email_template,
+        emailTo: user.email as string,
+      });
+    }),
+      await closeConnection();
 
     return new Response(null, {
-      status: 200,
+      status: HTTP_STATUS.OK,
       statusText: "Bill Payment Successful",
     });
   } catch (error) {
     console.log(error);
     await closeConnection();
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Internal Server Error",
     });
   }

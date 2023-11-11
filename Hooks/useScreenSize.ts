@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 
 export const useScreenSize = () => {
-  const newWindow = typeof window;
+  // Check if the `window` object is available
+  const isWindowAvailable = typeof window !== "undefined";
+
+  // Initialize the `screen` state with default values
   const [screen, setScreen] = useState({
     x: 0,
     y: 0,
@@ -9,14 +12,27 @@ export const useScreenSize = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      setScreen({ x: window.innerWidth, y: window.innerHeight });
+      if (isWindowAvailable) {
+        // Update the `screen` state with the current screen dimensions
+        setScreen({ x: window.innerWidth, y: window.innerHeight });
+      }
     };
 
+    // Initialize the `screen` state with the current screen dimensions
     handleResize();
 
-    window.addEventListener("resize", handleResize);
+    // Add an event listener to handle screen size changes
+    if (isWindowAvailable) {
+      window.addEventListener("resize", handleResize);
+    }
 
-    return () => window.removeEventListener("resize", handleResize);
-  }, [newWindow]);
+    // Remove the event listener when the component unmounts
+    return () => {
+      if (isWindowAvailable) {
+        window.removeEventListener("resize", handleResize);
+      }
+    };
+  }, [isWindowAvailable]);
+
   return screen;
 };

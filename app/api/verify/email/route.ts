@@ -1,77 +1,109 @@
+//----------------->All Imports<----------------
 import { closeConnection, connectDatabase } from "@/Models";
 import { otpProps } from "../../auth/requestOTP/route";
 import {
   UserModel,
   beneficiariesProps,
-  findUserById,
+  findUserByEmail,
+  notificationsProps,
   userProps,
 } from "@/Models/user";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../auth/[...nextauth]/options";
+import { HTTP_STATUS } from "../../donation/withdraw/route";
 
 export const POST = async (req: Request) => {
-  const { loginMode, email, otp }: otpProps & { otp: string | number } =
-    await req.json();
+  const { email, otp }: otpProps & { otp: string | number } = await req.json();
 
-  const _id = req.headers.get("user_id");
-
-  if (!email && !otp && loginMode !== "email") {
+  if (!email && !otp) {
     return new Response(null, {
-      status: 404,
+      status: HTTP_STATUS.NOT_FOUND,
       statusText: "Missing parameters",
     });
   }
 
-  if (!_id) {
+  if (isNaN(Number(otp))) {
     return new Response(null, {
-      status: 404,
-      statusText: "Missing parameters",
+      status: HTTP_STATUS.BAD,
+      statusText: "Invalid OTP",
     });
   }
 
-  const res = await fetch(
-    `/api/auth/requestOTP?email_or_phoneNumber=email&otp=${otp}`
-  );
+  const session = await getServerSession(authOptions);
 
-  if (!res.ok) {
+  if (!session?.user) {
     return new Response(null, {
-      status: res.status,
-      statusText: res.statusText,
+      status: HTTP_STATUS.UNAUTHORIZED,
+      statusText: "Unauthorized Please login",
     });
   }
 
   await connectDatabase();
 
   try {
-    const findUser: userProps<beneficiariesProps> | null = await findUserById(
-      _id
+    const user: userProps<beneficiariesProps> | null = await findUserByEmail(
+      session?.user?.email as string
     );
 
-    if (!findUser) {
+    if (!user) {
+      await closeConnection();
       return new Response(null, {
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         statusText: "User not found",
       });
     }
 
-    if (findUser.emailVerified) {
+    if (user.email !== email?.trim().toLowerCase()) {
+      await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.CONFLICT,
+        statusText: "Email mismatch",
+      });
+    }
+
+    if (user?.emailVerified) {
+      await closeConnection();
+      return new Response(null, {
+        status: HTTP_STATUS.CONFLICT,
         statusText: "Email already verified",
       });
     }
 
-    await UserModel.findByIdAndUpdate(findUser?._id.toString(), {
+    const res = await fetch(
+      `${process.env.NEXTAUTH_URL}/api/auth/requestOTP?email=${user.email}&otp=${otp}`
+    );
+
+    if (!res.ok) {
+      await closeConnection();
+      return new Response(null, {
+        status: res.status,
+        statusText: res.statusText,
+      });
+    }
+
+    const new_notification: notificationsProps = {
+      type: "info",
+      time: Date.now(),
+      message: "Your email has been verified successfully",
+    };
+
+    const update: userProps<beneficiariesProps> | {} = {
+      notifications: [...user.notifications, new_notification],
       emailVerified: true,
-    });
+    };
+
+    await UserModel.findByIdAndUpdate(user._id, update);
 
     await closeConnection();
     return new Response(null, {
-      status: 200,
-      statusText: "Email Verified",
+      status: HTTP_STATUS.OK,
+      statusText: "Email verification requested (Check Email)",
     });
   } catch (error) {
     console.log(error);
+    await closeConnection();
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Internal Server Error",
     });
   }

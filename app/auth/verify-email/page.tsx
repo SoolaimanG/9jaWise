@@ -1,7 +1,7 @@
 "use client";
 
+// --------------> All Imports <--------------
 import { useCheck } from "@/Hooks/useCheck";
-import { otpProps } from "@/app/api/auth/requestOTP/route";
 import Button from "@/components/button";
 import Input from "@/components/input";
 import React, { useState } from "react";
@@ -10,72 +10,73 @@ import { useRouter } from "next/navigation";
 import SlideIn from "@/components/Animations/slideIn";
 import Logo from "@/components/logo";
 import SlideFromBelow from "@/components/Animations/slideFromBelow";
+import { useStore } from "@/provider";
 
-const Page = ({ params: { id } }: { params: { id: string } }) => {
+const Page = () => {
+  // States to manage component state
   const [states, setStates] = useState({
-    verification_sent: false,
-    verification_failed: false,
-    email_sending_error: false,
     loading: false,
-    too_many_requests: false,
-    success: false,
-    error_text: "",
+    verification_sent: false,
   });
 
+  // useToast hook for displaying notifications
   const { toast } = useToast();
+  // Next.js router
   const route = useRouter();
+  //Zustand States
+  const { try_refresh } = useStore();
 
+  // States for email and OTP inputs
   const [email, setEmail] = useState<string | number>("");
   const [otp, setOtp] = useState<string | number>("");
 
+  // Custom hook to check email format
   const confirm_email = useCheck(email as string, "email");
 
+  // Function to request OTP
   const request_otp = async () => {
-    //
     setStates({ ...states, loading: true });
-    const payloay: otpProps = {
+    const payload = {
       loginMode: "email",
       email: email as string,
     };
 
     const res = await fetch("/api/auth/requestOTP", {
       method: "POST",
-      body: JSON.stringify(payloay),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
+      // Handle error cases
       setStates({
         ...states,
         loading: false,
-        error_text: res.statusText,
-        email_sending_error: true,
         verification_sent: false,
       });
 
-      res.status === 429 && setStates({ ...states, too_many_requests: true });
       toast({
         variant: "destructive",
-        title: "Something went wrong",
+        title: `ERROR ${res.status}`,
+        description: res.statusText,
       });
       return;
     }
 
+    // Display success message
     toast({
-      title: "OTP send to email provided",
+      title: "SUCCESS",
+      description: res.statusText,
     });
     setStates({
       ...states,
-      verification_sent: true,
       loading: false,
-      email_sending_error: false,
-      error_text: "",
+      verification_sent: true,
     });
   };
 
+  // Function to verify OTP
   const verify_otp = async () => {
-    //
-    const payload: otpProps & { otp: string | number } = {
-      loginMode: "email",
+    const payload = {
       email: email as string,
       otp: otp,
     };
@@ -84,34 +85,41 @@ const Page = ({ params: { id } }: { params: { id: string } }) => {
 
     const res = await fetch(`/api/verify/email`, {
       method: "POST",
-      headers: {
-        user_id: id,
-      },
       body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
+      // Handle error cases
+      toast({
+        title: `ERROR ${res.status}`,
+        description: res.statusText,
+        variant: "destructive",
+      });
       setStates({
         ...states,
         loading: false,
-        error_text: res.statusText,
-        success: false,
-        verification_failed: true,
       });
       return;
     }
 
+    // Display success message
     setStates({
       ...states,
-      success: true,
       loading: false,
-      error_text: "",
-      verification_failed: false,
     });
+    toast({
+      title: "SUCCESS",
+      description: res.statusText,
+    });
+    try_refresh();
+    setTimeout(() => {
+      route.push("/account/home");
+    }, 1500);
   };
 
   return (
     <div className="w-full flex-col gap-3 p-2 h-full">
+      {/* SlideIn animation for the top part of the page */}
       <SlideIn className="w-full">
         <div className="w-full flex items-center justify-between">
           <Button
@@ -124,10 +132,13 @@ const Page = ({ params: { id } }: { params: { id: string } }) => {
           <Logo color="purple" size="medium" />
         </div>
       </SlideIn>
+
+      {/* SlideFromBelow animation for the main content of the page */}
       <SlideFromBelow className="w-full flex-col gap-3 flex items-center justify-center h-full">
         <h2 className="text-2xl text-purple-500 sm:text-lg text-left w-full font-semibold">
           Verify your email
         </h2>
+        {/* Input for email */}
         <Input
           error={email ? !confirm_email : false}
           value={email}
@@ -135,37 +146,44 @@ const Page = ({ params: { id } }: { params: { id: string } }) => {
           type="email"
           placeholder="Your Email Address"
         />
+
+        {/* Input for OTP */}
         {states.verification_sent && (
           <Input
             value={otp}
             setValue={setOtp}
             type="text"
-            placeholder="5-digit OTP"
+            placeholder="6-digit OTP"
           />
         )}
-        {states.email_sending_error && (
-          <span className="text-left w-full text-base text-red-400">
-            {states.error_text}
-          </span>
-        )}
-        {states.success && (
-          <span className="text-left w-full text-base text-green-400">
-            Your email has been verify
-          </span>
-        )}
+
+        {/* Buttons for sending code and confirming email */}
         <div className="w-full flex items-center justify-end gap-3">
           <Button
             name="Send Code"
-            disabled={states.too_many_requests}
+            states={
+              states.loading
+                ? "loading"
+                : states.verification_sent
+                ? "complete"
+                : undefined
+            }
+            disabled={email && confirm_email && !states.loading ? false : true}
             varient="outlined"
             onClick={request_otp}
             className="h-[2.5rem] px-3 rounded-md"
           />
           <Button
             name="Confirm Email"
-            disabled={true}
+            disabled={
+              states.verification_sent &&
+              otp.toString().length === 6 &&
+              !states.loading
+                ? false
+                : true
+            }
             varient="filled"
-            onClick={() => {}}
+            onClick={verify_otp}
             className="h-[2.5rem] px-3 rounded-md"
           />
         </div>

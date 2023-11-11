@@ -1,4 +1,4 @@
-import { hashText, random, regexTesting, sendEmail } from "@/Functions/TS";
+import { hashText, regexTesting, sendEmail } from "@/Functions/TS";
 import { closeConnection, connectDatabase } from "@/Models";
 import { changePassword, changePasswordSchema } from "@/Models/changePassword";
 import {
@@ -9,6 +9,7 @@ import {
   notificationsProps,
   userProps,
 } from "@/Models/user";
+import { HTTP_STATUS } from "../../donation/withdraw/route";
 
 export const POST = async (req: Request) => {
   const {
@@ -20,7 +21,7 @@ export const POST = async (req: Request) => {
 
   if (!password && !confirmPassword && !id) {
     return new Response(null, {
-      status: 404,
+      status: HTTP_STATUS.NOT_FOUND,
       statusText: "Missing parameters (Password or Confirm Password)",
     });
   }
@@ -29,14 +30,14 @@ export const POST = async (req: Request) => {
 
   if (!checkPassword) {
     return new Response(null, {
-      status: 403,
+      status: HTTP_STATUS.BAD,
       statusText: "Weak password",
     });
   }
 
   if (password !== confirmPassword) {
     return new Response(null, {
-      status: 429,
+      status: HTTP_STATUS.CONFLICT,
       statusText: "Passwords do not match",
     });
   }
@@ -50,7 +51,7 @@ export const POST = async (req: Request) => {
     if (!password_change) {
       await closeConnection();
       return new Response(null, {
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         statusText:
           "User did not request for password change (Request not found)",
       });
@@ -61,7 +62,7 @@ export const POST = async (req: Request) => {
     if (password_change.expireOn < current_time) {
       await closeConnection();
       return new Response(null, {
-        status: 403,
+        status: HTTP_STATUS.BAD,
         statusText: "Please request a new password change (TOKEN has expired).",
       });
     }
@@ -73,7 +74,7 @@ export const POST = async (req: Request) => {
       await closeConnection();
 
       return new Response(null, {
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         statusText: "User not found",
       });
     }
@@ -82,7 +83,7 @@ export const POST = async (req: Request) => {
       await closeConnection();
 
       return new Response(null, {
-        status: 401,
+        status: HTTP_STATUS.BAD,
         statusText: "Cannot change password at the moment",
       });
     }
@@ -91,7 +92,7 @@ export const POST = async (req: Request) => {
       await closeConnection();
 
       return new Response(null, {
-        status: 429,
+        status: HTTP_STATUS.CONFLICT,
         statusText: "Something went wrong (Conflict with request)",
       });
     }
@@ -104,7 +105,7 @@ export const POST = async (req: Request) => {
     if (hashPassword === user_with_password.authentication.previous_password) {
       await closeConnection();
       return new Response(null, {
-        status: 429,
+        status: HTTP_STATUS.CONFLICT,
         statusText:
           "This password is similar to your a previous password you have used before (Please try another password)",
       });
@@ -141,10 +142,16 @@ export const POST = async (req: Request) => {
         emailTo: user.email as string,
       }),
     ]);
+
+    await closeConnection();
+    return new Response(null, {
+      status: HTTP_STATUS.OK,
+      statusText: "Password Successfully Changed",
+    });
   } catch (error) {
     await closeConnection();
     return new Response(null, {
-      status: 400,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Internal Server Error",
     });
   }

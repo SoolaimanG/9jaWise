@@ -74,6 +74,7 @@ const RequestPayment = () => {
           setValue={setId}
           type="text"
           placeholder={`@username/email/account-number (@${user?.username})`}
+          className="placeholder:capitalize"
         />
         {(user?.beneficiaries.length as number) >= 1 && (
           <div className="w-full">

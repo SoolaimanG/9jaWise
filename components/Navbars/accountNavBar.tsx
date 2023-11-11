@@ -1,6 +1,6 @@
 "use client";
 
-import { notificationsProps } from "@/Models/user";
+//-------------->All Imports<-------------
 import React, { useState } from "react";
 import { PiBell } from "react-icons/pi";
 import SlideFromAbove from "../Animations/slideFromAbove";
@@ -14,7 +14,7 @@ import { BsArrowLeft } from "react-icons/bs";
 import { useGetId } from "@/Hooks/useGetId";
 
 const AccountNavBar = () => {
-  const time = useCurrentTimeZone();
+  const time = useCurrentTimeZone(); //Hover to see Docs
   const { is_darkmode, user } = useStore();
   const path = useGetId(2);
 
@@ -28,7 +28,7 @@ const AccountNavBar = () => {
         {path === "home" ? (
           <p className="text-gray-500 sm:text-[0.79rem] dark:text-gray-300">
             {`Good ${time},`}{" "}
-            <span className="text-[1.2rem] sm:text-[0.8rem] font-semibold text-purple-500">
+            <span className="text-[1.2rem] capitalize sm:text-[0.8rem] font-semibold text-purple-500">
               {user?.username || user?.fullName.split(" ")[0] + "!"}
             </span>
           </p>
@@ -37,7 +37,7 @@ const AccountNavBar = () => {
             {path.toUpperCase()}
           </p>
         )}
-        <Link href={"/"} passHref>
+        <Link href={"/acoount/settings"} passHref>
           <img
             src={user?.profileImage}
             alt="image"

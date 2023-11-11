@@ -3,14 +3,15 @@ import { Progress } from "./ui/progress";
 export type ProgressCompProps = {
   value: number;
   max?: number;
+  className?: string;
 };
 
 const ProgressComp = (props: ProgressCompProps) => {
-  const { value, max } = props;
+  const { value, max, className } = props;
 
   return (
-    <div className="w-full">
-      <Progress value={max ? max - (max - value) : value} />
+    <div className={`w-full ${className}`}>
+      <Progress value={max ? (value / max) * 100 : value} />
     </div>
   );
 };

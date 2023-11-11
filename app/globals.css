@@ -247,13 +247,13 @@ body{
 /* *[WHY-US] */
 .gradient-one{
   background: #7e22ce;
-background: -webkit-linear-gradient(106deg, #7e22ce 0%, #d8b4fe 100%);
-background: linear-gradient(106deg, #7e22ce 0%, #d8b4fe 100%);
+  background: -webkit-linear-gradient(106deg, #7e22ce 0%, #d8b4fe 100%);
+  background: linear-gradient(106deg, #7e22ce 0%, #d8b4fe 100%);
 }
 .gradient-two{
   background: #7e22ce;
-background: -webkit-linear-gradient(243deg, #7e22ce 0%, #d8b4fe 100%);
-background: linear-gradient(243deg, #7e22ce 0%, #d8b4fe 100%);
+  background: -webkit-linear-gradient(243deg, #7e22ce 0%, #d8b4fe 100%);
+  background: linear-gradient(243deg, #7e22ce 0%, #d8b4fe 100%);
 }
 
 /* *[FEATURES] */
@@ -327,9 +327,9 @@ background: linear-gradient(243deg, #7e22ce 0%, #d8b4fe 100%);
 /* *OVERLAY */
 .overlay_bg_light{
   background: rgba(255,255,255,0.4);
--webkit-backdrop-filter: blur(32px);
-backdrop-filter: blur(32px);
-border: 1px solid rgba(255,255,255,0.2);
+  -webkit-backdrop-filter: blur(32px);
+  backdrop-filter: blur(32px);
+  border: 1px solid rgba(255,255,255,0.2);
 }
 
 .overlay_bg_dark{
@@ -337,4 +337,11 @@ border: 1px solid rgba(255,255,255,0.2);
   -webkit-backdrop-filter: blur(32px);
   backdrop-filter: blur(32px);
   border: 1px solid rgba(0,0,0,0.2);
+}
+
+/** [DONATION] */
+.gradient_overlay {
+  background: rgba(0, 0, 0, 0.5); /* 50% opaque black */
+  background: -webkit-linear-gradient(6deg, rgba(0, 0, 0, 0.5) 0%, rgba(197, 197, 197, 0.5) 100%);
+  background: linear-gradient(6deg, rgba(0, 0, 0, 0.5) 0%, rgba(197, 197, 197, 0.5) 100%);
 }

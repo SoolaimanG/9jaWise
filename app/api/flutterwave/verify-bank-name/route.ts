@@ -1,6 +1,9 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "../../auth/[...nextauth]/options";
+import { AccountModel, account_number_props } from "@/Models/accountNumbers";
+import { HTTP_STATUS } from "../../donation/withdraw/route";
+import { closeConnection, connectDatabase } from "@/Models";
 
 export const GET = async (req: Request) => {
   // Parse the URL for query parameters
@@ -12,9 +15,30 @@ export const GET = async (req: Request) => {
 
   if (!session?.user) {
     return new Response(null, {
-      status: 401,
+      status: HTTP_STATUS.UNAUTHORIZED,
       statusText: "Unauthorized (Please Login)",
     });
+  }
+
+  if (account_bank?.trim().toLowerCase() === "01".toLowerCase()) {
+    await connectDatabase();
+
+    const account: account_number_props | null = await AccountModel.findOne({
+      account_number: account_number,
+    });
+
+    //data.data.account_name
+    const data = {
+      account_name: account?.account_name,
+    };
+
+    if (account) {
+      await closeConnection();
+      return NextResponse.json({
+        data: data,
+        message: "success",
+      });
+    }
   }
 
   // Make a POST request to the Flutterwave API to fetch beneficiary data

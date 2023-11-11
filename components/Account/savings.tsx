@@ -42,22 +42,13 @@ const Saving = () => {
   const { user, try_refresh } = useStore();
 
   const { savings } = user as userProps<beneficiariesProps>;
+  const current_time = Date.now();
 
   const total_amount = savings.reduce((acc, curr) => {
     return acc + curr.amount;
   }, 0);
 
   const naira = useNairaFormatter(total_amount);
-  const disableButton = () => {
-    const check = allow_withdraw ? date && allow_withdraw : !allow_withdraw;
-
-    return (
-      goal_name.toString().length > 2 &&
-      icon_name &&
-      !isNaN(Number(amount as string)) &&
-      check
-    );
-  };
 
   const addSaves = async () => {
     setStates({ ...states, loading: true });
@@ -65,11 +56,12 @@ const Saving = () => {
     const payload: savingProps = {
       _id: String(Date.now()),
       icon_name: icon_name,
-      amount: amount as number,
+      amount: Number(amount),
       date: new Date(),
-      allow_withdraw: true,
+      allow_withdraw: !allow_withdraw,
       name: goal_name as string,
       description: desc as string,
+      withdraw_with_password: withdraw_with_password,
     };
 
     const res = await fetch("/api/savings", {
@@ -106,6 +98,27 @@ const Saving = () => {
   };
 
   const delete_savings = async (id: string) => {
+    const find_saving = savings.find((save) => {
+      return save._id === id;
+    });
+
+    if (!find_saving) {
+      return;
+    }
+
+    const withdrawal_time = new Date(find_saving?.date);
+
+    if (
+      !find_saving.allow_withdraw &&
+      withdrawal_time.getTime() > current_time
+    ) {
+      return toast({
+        title: "ERROR",
+        description: `Please wait till ${find_saving.date} before withdrawing/deletings`,
+        variant: "destructive",
+      });
+    }
+
     const payload = {
       id: id,
       password: password,
@@ -119,7 +132,7 @@ const Saving = () => {
 
     if (!res.ok) {
       toast({
-        title: "ERROR" + String(res.status),
+        title: "ERROR" + " " + String(res.status),
         description: res.statusText,
         variant: "destructive",
       });
@@ -131,6 +144,68 @@ const Saving = () => {
       title: "SUCCESS",
       description: res.statusText,
     });
+  };
+
+  const withdraw_savings = async () => {
+    const find_saving = savings.find((save) => {
+      return save.name.toLowerCase() === from_bucket.toString().toLowerCase();
+    });
+
+    if (!find_saving) {
+      return;
+    }
+
+    const withdrawal_time = new Date(find_saving.date);
+
+    if (
+      !find_saving.allow_withdraw &&
+      withdrawal_time.getTime() > current_time
+    ) {
+      return toast({
+        title: "ERROR",
+        description: `Please wait till ${find_saving.date} before withdrawing/deletings`,
+        variant: "destructive",
+      });
+    }
+
+    if (Number(withdraw_amount) > find_saving.amount) {
+      return toast({
+        title: "ERROR",
+        description: `Cannot withdraw unavailable amount`,
+        variant: "destructive",
+      });
+    }
+
+    setStates({ ...states, loading: true });
+
+    const payload = {
+      name: from_bucket.toString().trim().toLowerCase(),
+      amount: withdraw_amount,
+      password: withdraw_with_password,
+    };
+
+    const res = await fetch("/api/savings/withdraw", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      setStates({ ...states, loading: false });
+      toast({
+        title: `ERROR ${res.status}`,
+        description: res.statusText,
+        variant: "destructive",
+      });
+
+      return;
+    }
+
+    setStates({ ...states, loading: false });
+    toast({
+      title: `SUCCESS`,
+      description: res.statusText,
+    });
+    try_refresh();
   };
 
   //List of icons to select
@@ -248,7 +323,14 @@ const Saving = () => {
                   name="Create"
                   states={states.loading ? "loading" : undefined}
                   varient="warning"
-                  disabled={disableButton() ? false : true}
+                  disabled={
+                    goal_name &&
+                    amount &&
+                    (allow_withdraw ? (date ? true : false) : true) &&
+                    icon_name
+                      ? false
+                      : true
+                  }
                   onClick={addSaves}
                 />
               </div>
@@ -358,9 +440,10 @@ const Saving = () => {
           <Button
             className="w-full md:w-full sm:w-full h-[2.5rem]"
             borderRadius={true}
-            disabled={false}
+            disabled={states.loading}
             name="Withdraw"
-            onClick={() => {}}
+            states={states.loading ? "loading" : undefined}
+            onClick={withdraw_savings}
             varient="danger"
           />
         </div>

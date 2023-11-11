@@ -24,10 +24,13 @@ export function Modal(props: modalProps) {
       <AlertDialogContent>
         {content}
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel className="w-full flex items-center justify-center">
+            Cancel
+          </AlertDialogCancel>
 
           {actionBtn && (
             <AlertDialogAction
+              className="w-full flex items-center justify-center"
               onClick={() =>
                 //@ts-ignore
                 action()

@@ -11,6 +11,7 @@ import {
   updateAmNotARobot,
 } from "@/Models/amNotARobot";
 import { closeConnection, connectDatabase } from "@/Models";
+import { signUpProps } from "../auth/signup/route";
 
 export type acctResProps = {
   response: string;
@@ -20,7 +21,7 @@ export type acctResProps = {
 };
 type responseType = { response: string; option: string[] }[];
 
-//Function to find number closer to zero
+// Function to find the number closest to zero
 function findClosestToZero(numbers: number[]) {
   if (numbers.length === 0) {
     return null; // Handle the case when the array is empty
@@ -47,7 +48,7 @@ export const askQuestion = async (userInput: string) => {
   const haveLessDistance: { id: number; score: number }[] = [];
   let choice: number | undefined;
 
-  //Iterate through the predefined questions
+  // Iterate through the predefined questions
   questions.forEach((question, index) => {
     const keywords = question.keyword;
 
@@ -67,7 +68,7 @@ export const askQuestion = async (userInput: string) => {
       //@ts-ignore
       response.push(props);
     } else {
-      //Compare String Here!
+      // Compare String Here!
       for (let i = 0; i < keywords.length; i++) {
         const element = keywords[i];
 
@@ -84,17 +85,17 @@ export const askQuestion = async (userInput: string) => {
     }
   });
 
-  //Create a function to see the closest number to zero
+  // Create a function to see the closest number to zero
   const closestNumber = findClosestToZero(haveLessDistance.map((d) => d.score));
 
-  //Find the score of what closest number return [F-1]
+  // Find the score of what the closest number returns [F-1]
   const findScoreAndIndex = haveLessDistance.find(
     (d) => d.score === closestNumber
   );
 
   if ((closestNumber as number) > 12) {
     const props = {
-      response: "Sorry am not sure i understand what you are saying",
+      response: "Sorry, I am not sure I understand what you are saying",
       options: [""],
     };
 
@@ -103,10 +104,10 @@ export const askQuestion = async (userInput: string) => {
     return response;
   }
 
-  //After getting what i needed i then find the current index return by [F-1]
+  // After getting what I needed, I then find the current index returned by [F-1]
   const findResponse = questions.find((_, i) => i === findScoreAndIndex?.id);
 
-  //?The random choice this makes determine the response
+  // ?The random choice this makes determines the response
   choice =
     findResponse && Math.floor(Math.random() * findResponse?.response?.length);
 
@@ -140,7 +141,8 @@ export const customerService = async () => {
  * @param {string} message - User's input message.
  * @param {number} id - Current step or stage in the account creation process.
  * @param {accountProps} AccountDetails - Object containing user's account details.
- * @returns {acctResProps[]} An array of response objects with instructions for the use**/
+ * @returns {acctResProps[]} An array of response objects with instructions for the user
+ **/
 
 export const createAccount = async (
   message: string,
@@ -170,7 +172,7 @@ export const createAccount = async (
   switch (id) {
     case 0:
       ResponsesMessage =
-        "You just initiated a account creation mode,I will be asking you a bit of your personal information needed to create a new account(Reply to this is you are creating a new account other wise type clear/reset).";
+        "You have initiated an account creation mode. I will be asking you for some of your personal information needed to create a new account. (Reply to this if you are creating a new account; otherwise, type clear/reset).";
       index++;
       break;
     case 1:
@@ -193,31 +195,29 @@ export const createAccount = async (
       break;
     case 5:
       ResponsesMessage =
-        "How do you want the authentication process (OTP for otp and PASSWORD for password).";
+        "How do you want the authentication process (OTP for OTP and PASSWORD for password).";
 
       index = 6;
       break;
     case 6:
-      //Process for sending OTP and confirming password
+      // Process for sending OTP and confirming password
       if (message === "otp") {
         const res = await fetch(
           `${process.env.HOSTNAME as string}/api/auth/requestOTP`,
           {
             method: "POST",
             body: JSON.stringify({
-              loginMode: email ? "email" : "phoneNumber",
-              email,
-              phoneNumber,
+              loginMode: "email",
+              email: email,
             }),
-            headers: { "Content-Type": "application/json" },
           }
         );
 
         if (res.ok) {
-          ResponsesMessage = res.statusText + "(Enter OTP)";
+          ResponsesMessage = res.statusText + " (Enter OTP)";
           index = 8;
         } else {
-          ResponsesMessage = "Unable to send OTP request please try again!";
+          ResponsesMessage = "Unable to send OTP request, please try again!";
           index = 1;
         }
       } else if (message === "password") {
@@ -245,7 +245,6 @@ export const createAccount = async (
           (email as string) || (phoneNumber as number),
           _AmNotARobot
         );
-        console.log(updateRequest);
         ResponsesMessage = `Are you a robot? Retype this ${_AmNotARobot} for confirmation.`;
       } else {
         //
@@ -253,7 +252,6 @@ export const createAccount = async (
           _AmNotARobot,
           (email as string) || (phoneNumber as number)
         );
-        console.log(res);
         ResponsesMessage = `Are you a robot? Retype this ${_AmNotARobot} for confirmation.`;
       }
       await closeConnection();
@@ -273,46 +271,16 @@ export const createAccount = async (
         haveError = true;
         ResponsesMessage =
           "Password must be at least 6 characters long and contain numbers and special characters.";
-
-        const props = {
-          response: ResponsesMessage,
-          options: [""],
-          index,
-          haveError,
-        };
-
-        response.push(props);
-        return response;
       }
 
       if (password && password !== confirmPassword) {
         haveError = true;
         ResponsesMessage = "Password does not match.";
-
-        const props = {
-          response: ResponsesMessage,
-          options: [""],
-          index,
-          haveError,
-        };
-
-        response.push(props);
-        return response;
       }
 
       if (email && !testEmail) {
         haveError = true;
         ResponsesMessage = "Invalid email address.";
-
-        const props = {
-          response: ResponsesMessage,
-          options: [""],
-          index,
-          haveError,
-        };
-
-        response.push(props);
-        return response;
       }
 
       await connectDatabase();
@@ -323,63 +291,65 @@ export const createAccount = async (
 
       await closeConnection();
 
-      if (amNotARobot !== res.amNotARobotToken) {
+      if (!res) {
         haveError = true;
         ResponsesMessage = "Invalid AmNotaROBOT token error.";
-
-        const props = {
-          response: ResponsesMessage,
-          options: [""],
-          index,
-          haveError,
-        };
-
-        response.push(props);
-        return response;
       }
 
-      if (Number.isNaN(otp)) {
+      if (
+        amNotARobot?.toLowerCase().trim() !==
+        res.amNotARobotToken.toLowerCase().trim()
+      ) {
         haveError = true;
-        ResponsesMessage = "Invalid OTP";
-
-        const props = {
-          response: ResponsesMessage,
-          options: [""],
-          index,
-          haveError,
-        };
-
-        response.push(props);
-        return response;
+        ResponsesMessage = "Invalid AmNotaROBOT token error.";
       }
 
-      if (otp) {
-        const data = await fetchData(
+      // If OTP is provided and a valid number, send a request to requestOTP
+      if (otp && !isNaN(Number(otp))) {
+        const data = await fetch(
           `${
             process.env.HOSTNAME as string
-          }/api/auth/requestOTP?otp=${otp}&email_or_phoneNumber=${email}`
+          }/api/auth/requestOTP?otp=${otp}&email=${email}`
         );
 
         if (!data.ok) {
           haveError = true;
           ResponsesMessage = data.statusText;
-
-          const props = {
-            response: ResponsesMessage,
-            options: [""],
-            index,
-            haveError,
-          };
-
-          response.push(props);
-          return response;
         }
       }
 
-      //SignUp
+      // Prepare payload for signing up
+      const payload: signUpProps & {
+        otp: number | string;
+      } = {
+        loginMode: typeof Number(password) !== "number" ? "password" : "otp",
+        loginType: email ? "email" : "phoneNumber",
+        fullName: fullName,
+        email: email as string,
+        phoneNumber: String(phoneNumber),
+        occupation: "",
+        acceptTermsAndConditions: true,
+        accountType: accountType as "personal" | "business",
+        password: password as string,
+        confirmPassword: confirmPassword as string,
+        otp: typeof Number(password) === "number" ? Number(password) : 0,
+      };
 
-      //All test pass send request to /api/auth/signup to create a new account
+      // Send a request to /api/auth/signup to create a new account
+      const new_res = await fetch(
+        `${process.env.NEXTAUTH_URL}/api/auth/signup`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
 
+      if (!new_res.ok) {
+        ResponsesMessage = new_res.statusText;
+      }
+
+      // Set the response message, possibly "Account creation is successful"
+      ResponsesMessage = new_res.statusText;
       break;
   }
 

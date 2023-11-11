@@ -1,4 +1,4 @@
-export const requestOTPEmail = (otp: number) => {
+export const requestOTPEmail = (otp: string) => {
   return `<!DOCTYPE html>
   <html lang="en">
   <head>
@@ -1294,6 +1294,57 @@ export const donation_receive_email = (amount: number) => {
     `;
 };
 
+export const delete_campaign_email = (username: string) => {
+  return `
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donation Deleted</title>
+    <style>
+        body {
+            font-family: 'Spectral', sans-serif;
+            background-color: #f2f2f2;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #6a0dad; /* Purple color */
+        }
+
+        p {
+            color: #333;
+        }
+
+        .message {
+            font-style: italic;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Donation Deleted</h1>
+        <p>Dear ${username},</p>
+        <p>We regret to inform you that one of your campaign donations has been deleted.</p>
+        <p class="message">If you have any questions or concerns, please don't hesitate to contact us. We appreciate your understanding.</p>
+    </div>
+</body>
+</html>
+
+    `;
+};
+
 export const new_payment_email = (username: string, amount: number) => {
   const format_currency = Intl.NumberFormat("en-NG", {
     style: "currency",
@@ -1372,6 +1423,225 @@ export const new_payment_email = (username: string, amount: number) => {
             <p class="message">A new payment of ${format_currency} has been detected in your account.</p>
             <p class="message">If you have any questions or concerns, please contact our support team.</p>
             <a href="#" class="button">View Details</a>
+        </div>
+    </div>
+</body>
+</html>
+
+    `;
+};
+
+export const request_payment_email = (
+  username: string,
+  request_from: string,
+  amount: number,
+  account: {
+    account_number: string;
+    account_name: string;
+    bank_name: string;
+  }
+) => {
+  return `
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Request</title>
+    <style>
+        body {
+            font-family: 'Spectral', serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: #673ab7;
+            color: #fff;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .message {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .button {
+            background-color: #673ab7;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: inline-block;
+            font-size: 16px;
+        }
+
+        .button:hover {
+            background-color: #421f6e;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Payment Request</h1>
+        </div>
+        <div class="content">
+            <p class="message">Hello ${username},</p>
+            <p class="message">You have received a payment request from ${request_from} for ${Intl.NumberFormat(
+    "en-NG",
+    {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 2,
+    }
+  ).format(amount)} to the following account:</p>
+            <p class="message">Account Number: ${account.account_number}</p>
+            <p class="message">Account Name: ${account.account_name}</p>
+            <p class="message">Bank Name: ${account.bank_name}</p>
+            <p class="message">Please review the details and click the button below to fulfill the request.</p>
+            <a href="${
+              process.env.NEXTAUTH_URL
+            }/auth/signin" class="button">Fulfill Request</a>
+        </div>
+    </div>
+</body>
+</html>
+
+    `;
+};
+
+export const transaction_alert_email = ({
+  username,
+  transaction_id,
+  date,
+  account_number,
+  amount,
+  type,
+}: {
+  username: string;
+  transaction_id: string;
+  date: Date;
+  account_number: string;
+  amount: number;
+  type: "credit" | "debit";
+}) => {
+  return `
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Payment Detected</title>
+    <style>
+        body {
+            font-family: 'Spectral', serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: #673ab7;
+            color: #fff;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .message {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .button {
+            background-color: #673ab7;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: inline-block;
+            font-size: 16px;
+        }
+
+        .button:hover {
+            background-color: #421f6e;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>${
+              type === "credit" ? "New Payment Detected" : "Debit Alert"
+            }</h1>
+        </div>
+        <div class="content">
+            <p class="message">Hello ${username},</p>
+            <p class="message">${
+              type === "credit"
+                ? `You have received a payment of ${Intl.NumberFormat("en-NG", {
+                    style: "currency",
+                    currency: "NGN",
+                    minimumFractionDigits: 2,
+                  }).format(amount)} in your account.`
+                : `A debit transaction of ${Intl.NumberFormat("en-NG", {
+                    style: "currency",
+                    currency: "NGN",
+                    minimumFractionDigits: 2,
+                  }).format(amount)} has been made from your account.`
+            }</p>
+            <p class="message">Transaction Details:</p>
+            <ul>
+                <li>Transaction ID: ${transaction_id}</li>
+                <li>Date: ${date.toISOString()}</li>
+                <li>Payment Method: Bank Trf</li>
+                <li>Account Number: ${account_number}</li>
+                <li>Bank Name: 9JA WISE BANK</li>
+            </ul>
+            <p class="message">If you have any questions or concerns, please contact our support team.</p>
+            <a href='${
+              process.env.NEXTAUTH_URL
+            }' class="button">View Details</a>
         </div>
     </div>
 </body>

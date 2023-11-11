@@ -6,7 +6,7 @@ import { Checkbox } from "../ui/checkbox";
 import { toast } from "../ui/use-toast";
 import { DialogDescription, DialogTitle } from "../ui/dialog";
 import { DialogAlert } from "../dialogAlert";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export type stageTwoProps = {
   authType: "otp" | "password";
@@ -27,13 +27,11 @@ export type stageTwoProps = {
     SetStateAction<"loading" | "failed" | "success" | "">
   >;
 };
-
 export type otpProps = {
   otpRequested: "requested" | "requestFailed" | "notRequested" | "pending";
   numberOfRequest: number;
   otpVerification: "pending" | "failed" | "complete" | "normal";
 };
-
 const accountTypes = [
   {
     type: "personal",
@@ -60,6 +58,7 @@ const StageTwo: React.FC<stageTwoProps> = ({
   loginMode,
   accountState,
 }) => {
+  //---->States use to verify strength of password for users<-----
   const [validPassword, setValidPassword] = useState({
     strength: 0,
     is_mathching: false,
@@ -71,18 +70,21 @@ const StageTwo: React.FC<stageTwoProps> = ({
     upperCase: 0,
     number: 0,
   });
+
+  //---->States for OTP i.e is it sent, is the request failed or default<----
   const [otpStates, setOtpStates] = useState<otpProps>({
     otpRequested: "notRequested",
     numberOfRequest: 0,
     otpVerification: "normal",
   });
-  const [acceptCondition, setAcceptCondition] = useState(false);
-  const [stateText, setStateText] = useState("");
+
+  const [acceptCondition, setAcceptCondition] = useState(false); //Terms & COndition must be True
+  const [stateText, setStateText] = useState(""); //State text means the current state of the request ->Failed or Success
   const [confirmPassword, setConfirmPassword] = useState<string | number>("");
 
-  const route = useRouter();
+  const route = useRouter(); //NEXTJS router for routing navigating btw pages
 
-  //Password confirmation
+  //Checking the password length whenver each validation requirement is meet increment +20 to tell the user the progress
   useEffect(() => {
     const newPasswordStrength = {
       length: /^(.{6,})$/.test(password) ? 20 : 0,
@@ -131,6 +133,7 @@ const StageTwo: React.FC<stageTwoProps> = ({
       numberOfRequest: otpStates.numberOfRequest + 1,
     });
 
+    //If the account creation is !Successful then notify the user or client
     if (!res.ok) {
       setOtpStates({ ...otpStates, otpRequested: "requestFailed" });
       setOtpStates({ ...otpStates, otpVerification: "normal" });
@@ -152,6 +155,44 @@ const StageTwo: React.FC<stageTwoProps> = ({
       description: res.statusText,
     });
   };
+
+  //A modal to be display if the account creation is successful so users can navigate to sign page --> auth/signin
+  const account_created = (
+    <DialogAlert
+      open={accountState === "success"}
+      button={<></>}
+      content={
+        <div className="w-full flex flex-col gap-4">
+          <DialogTitle className="text-center text-gray-500 dark:text-gray-300">
+            Account Created Successfully
+          </DialogTitle>
+          {loginMode === "email" ? (
+            <DialogDescription className="capitalize text-center">
+              Congratulations your account has been created successfully, Please
+              check your email (SPAN FOLDER).
+            </DialogDescription>
+          ) : (
+            <DialogDescription className="capitalize text-center">
+              <DialogDescription className="capitalize text-center">
+                Congratulations your account has been created successfully,
+                Unfortunately we cannot send you an SMS right now.
+              </DialogDescription>
+            </DialogDescription>
+          )}
+          <div className="flex gap-2 items-center">
+            <Button
+              varient="outlined"
+              className="w-full outline hover:text-white h-[2.5rem]"
+              onClick={() => route.push("/auth/signin")}
+              disabled={false}
+              borderRadius
+              name="Go to login"
+            />
+          </div>
+        </div>
+      }
+    />
+  );
 
   return (
     <div className="mt-3 w-full">
@@ -298,7 +339,7 @@ const StageTwo: React.FC<stageTwoProps> = ({
                 ? password && password === confirmPassword && acceptCondition
                   ? false
                   : true
-                : acceptCondition
+                : acceptCondition && otp
                 ? false
                 : true
             }
@@ -309,40 +350,8 @@ const StageTwo: React.FC<stageTwoProps> = ({
             className="px-3 h-[2.5rem]"
           />
         </div>
-        <DialogAlert
-          open={accountState === "success"}
-          button={<></>}
-          content={
-            <div className="w-full flex flex-col gap-4">
-              <DialogTitle className="text-center text-gray-500 dark:text-gray-300">
-                Account Created Successfully
-              </DialogTitle>
-              {loginMode === "email" ? (
-                <DialogDescription className="capitalize text-center">
-                  Congratulations your account has been created successfully,
-                  Please check your email (SPAN FOLDER).
-                </DialogDescription>
-              ) : (
-                <DialogDescription className="capitalize text-center">
-                  <DialogDescription className="capitalize text-center">
-                    Congratulations your account has been created successfully,
-                    Unfortunately we cannot send you an SMS right now.
-                  </DialogDescription>
-                </DialogDescription>
-              )}
-              <div className="flex gap-2 items-center">
-                <Button
-                  varient="outlined"
-                  className="w-full outline hover:text-white h-[2.5rem]"
-                  onClick={() => route.push("/auth/signin")}
-                  disabled={false}
-                  borderRadius
-                  name="Go to login"
-                />
-              </div>
-            </div>
-          }
-        />
+        {/* Can be place any where */}
+        {account_created}
       </div>
     </div>
   );

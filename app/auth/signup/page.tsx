@@ -1,5 +1,6 @@
 "use client";
 
+//-------------->All Imports<--------------
 import FadeIn from "@/components/Animations/fadeIn";
 import SlideFromBelow from "@/components/Animations/slideFromBelow";
 import Header from "@/components/Navbars/header";
@@ -7,17 +8,19 @@ import StageOne from "@/components/AuthComp/stageOne";
 import StageTwo from "@/components/AuthComp/stageTwo";
 import { useState } from "react";
 import { signUpProps } from "@/app/api/auth/signup/route";
-import { toast, useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/use-toast";
+import { useSearchParams } from "next/navigation";
 
 const Page = () => {
+  const params = useSearchParams(); //NEXTJS Search params to get the URL params
+
+  //--------->States for signup users<-----------
   const [state, setState] = useState<"first" | "second">("first");
   const [fullName, setFullName] = useState<string | number>("");
-  const [loginMode, setLoginMode] = useState<"phoneNumber" | "email">(
-    "phoneNumber"
-  );
   const [password, setPassword] = useState<string | number>("");
-  const [email, setEmail] = useState<string | number>("");
-  const [authType, setAuthType] = useState<"otp" | "password">("password");
+  const [email, setEmail] = useState<string | number>(
+    params.has("email") ? (params.get("email") as string) : ""
+  );
   const [phoneNumber, setPhoneNumber] = useState<string | number>("");
   const [accountType, setAccountType] = useState<"personal" | "business">(
     "personal"
@@ -25,12 +28,20 @@ const Page = () => {
   const [otp, setOtp] = useState<string | number>("");
   const [occupation, setOccupation] = useState<string | number>("");
 
+  //--------->Auththentication flow<-------------
+  const [authType, setAuthType] = useState<"otp" | "password">("password");
+  const [loginMode, setLoginMode] = useState<"phoneNumber" | "email">(
+    params.has("email") ? "email" : "phoneNumber"
+  );
+
+  //--->Tracking Request States[is the request successfull or it's not or loading]<-----
   const [accountState, SetAccountState] = useState<
     "loading" | "failed" | "success" | ""
   >("");
 
+  //Async func to create a new user account
   const createAccount = async (confirmPassword: string | number) => {
-    //
+    //Payload needed ro create a new account
     const payload: signUpProps & { otp: string | number } = {
       loginType: loginMode,
       loginMode: authType,
@@ -45,12 +56,13 @@ const Page = () => {
       otp: otp,
     };
 
-    SetAccountState("loading");
+    SetAccountState("loading"); //Start loading
     const res = await fetch(`/api/auth/signup`, {
       method: "POST",
       body: JSON.stringify(payload),
     });
 
+    //If the response is not !OK notify the user
     if (!res.ok) {
       SetAccountState("failed");
       toast({
@@ -61,7 +73,7 @@ const Page = () => {
       return;
     }
 
-    SetAccountState("success");
+    SetAccountState("success"); //This is to show modal
   };
 
   return (

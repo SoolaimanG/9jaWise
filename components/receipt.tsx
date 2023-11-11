@@ -12,7 +12,7 @@ import { useNairaFormatter } from "@/Hooks/useNairaFormatter";
 export type receiptProps = {
   status: statusProps;
   amount: number;
-  refNumber: number;
+  refNumber: string;
   receiver: string;
   sender: string;
   payment_type: transactiontypes;
@@ -45,17 +45,17 @@ const Receipt = (props: receiptProps) => {
       prop: receiver,
     },
     {
-      id: 4,
+      id: 3,
       desc: "Payment type",
       prop: payment_type[0].toUpperCase().concat(payment_type.substring(1)),
     },
     {
-      id: 1,
+      id: 4,
       desc: "Payment time",
       prop: date,
     },
     {
-      id: 3,
+      id: 5,
       desc: "Sender",
       prop: sender,
     },
@@ -98,7 +98,13 @@ const Receipt = (props: receiptProps) => {
       <div className="w-full mt-3 p-2 bg-gray-100 flex flex-col gap-2 text-slate-700 dark:bg-slate-700 dark:text-gray-200 rounded-md">
         <div className="w-full flex items-center justify-between">
           <span className="text-[0.9rem]">Amount</span>
-          <h2 className="text-base">{naira}</h2>
+          <h2
+            className={`text-base ${
+              payment_type === "credit" ? "text-green-500" : "text-red-500"
+            }`}
+          >
+            {naira}
+          </h2>
         </div>
         <div className="w-full flex items-center justify-between">
           <span className="text-[0.9rem]">Payment status</span>
@@ -122,7 +128,11 @@ const Receipt = (props: receiptProps) => {
               className="w-full flex items-center justify-between"
             >
               <span>{r.desc}</span>
-              <h2 className="font-semibold">{r.prop}</h2>
+              <p
+                className={`${r.id === 1 ? "text-[0.9rem]" : "font-semibold"}`}
+              >
+                {r.prop}
+              </p>
             </div>
           ))}
         </div>
@@ -133,14 +143,6 @@ const Receipt = (props: receiptProps) => {
           name="Download PDF reciept"
           disabled={false}
           varient="outlined"
-          onClick={() => {}}
-          borderRadius={true}
-        />
-        <Button
-          className="h-[2.5rem] px-3"
-          name="Done"
-          disabled={false}
-          varient="filled"
           onClick={() => {}}
           borderRadius={true}
         />

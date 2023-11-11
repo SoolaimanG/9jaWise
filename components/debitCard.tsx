@@ -1,3 +1,4 @@
+import { useBalanceHider } from "@/Hooks/useBalanceHider";
 import { useNairaFormatter } from "@/Hooks/useNairaFormatter";
 import { useStore } from "@/provider";
 import { motion } from "framer-motion";
@@ -9,13 +10,25 @@ export type debitCardProps = {
   accountNumber: number | null;
   balance: number;
   transform?: boolean;
+  hideBalance?: boolean;
 };
 
 const DebitCard = (props: debitCardProps) => {
-  const { type, name, className, accountNumber, balance, transform } = props;
+  const {
+    type,
+    name,
+    className,
+    accountNumber,
+    balance,
+    transform,
+    hideBalance,
+  } = props;
   const { is_darkmode } = useStore();
 
-  const format_balance = useNairaFormatter(balance);
+  const format_balance = useBalanceHider({
+    hideBalance: hideBalance as boolean,
+    balance: balance,
+  });
 
   const styles = {
     color: `${is_darkmode ? "purpleGradient_dark" : "purpleGradient_light"}`,
@@ -47,7 +60,7 @@ const DebitCard = (props: debitCardProps) => {
               Name
             </strong>
             <span
-              className={`sm:text-[1rem] dark:text-white ${
+              className={`sm:text-[1rem] capitalize dark:text-white ${
                 type === "glassmorphism" && "text-blacks-1000 "
               }`}
             >

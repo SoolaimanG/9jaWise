@@ -1,5 +1,6 @@
 "use client";
 
+//------------>All Imports<-----------
 import FadeIn from "@/components/Animations/fadeIn";
 import SlideFromBelow from "@/components/Animations/slideFromBelow";
 import OtpLogin from "@/components/AuthComp/otpLogin";
@@ -10,6 +11,7 @@ import React, { useState } from "react";
 export type requestProps = "failed" | "sent" | "not-requested";
 
 const Page = () => {
+  //Type of loginflow user prefer OTP | Password
   const [loginType, setLoginType] = useState<"otp" | "password">("password");
 
   return (
@@ -47,9 +49,9 @@ const Page = () => {
         {
           <SlideFromBelow key={loginType}>
             {loginType === "otp" ? (
-              <OtpLogin loginMode={loginType} />
+              <OtpLogin loginMode={loginType} /> // login with otp component
             ) : (
-              <PasswordLogin />
+              <PasswordLogin /> //login with password component
             )}
           </SlideFromBelow>
         }

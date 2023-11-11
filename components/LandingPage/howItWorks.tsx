@@ -1,3 +1,4 @@
+//----------------->All Imports<----------------
 import TextStreamer from "@/Functions/TSX/textStream";
 import Chip from "../chip";
 import Link from "next/link";
@@ -7,6 +8,7 @@ import { MdKeyboardArrowDown } from "react-icons/md";
 import { useInView } from "react-intersection-observer";
 import Rings from "./rings";
 
+//How its works content
 export const howItWorksContent = [
   {
     step: "Signup",
@@ -37,6 +39,7 @@ const HowItWorks = () => {
     triggerOnce: true,
   });
 
+  //Opening the accordion according to the on clicked
   const handleOpen = (id: 1 | 2 | 3 | 4 | 0) => {
     //
     setCurrentState(id === currentState ? 0 : id);
@@ -45,7 +48,7 @@ const HowItWorks = () => {
     <motion.section
       ref={ref}
       id="how-it-works"
-      className="w-full overflow-hidden px-5 mt-20 h-screen md:h-fit sm:h-fit relative md:pb-3 sm:pb-3"
+      className="w-full overflow-hidden px-5 mt-10 h-screen md:h-fit sm:h-fit relative md:pb-3 sm:pb-3"
     >
       <Rings position="top-[20%] left-0 -ml-[5rem]" />
       <Rings position="top-[35%] right-0 -mr-[5rem]" />
@@ -62,22 +65,24 @@ const HowItWorks = () => {
           Easy as ABC...
         </h2>
       </motion.div>
-      <div className="w-full md:mt-10 flex md:flex-col-reverse h-full items-center justify-center flex-row sm:flex-col-reverse gap-3">
+      <div className="w-full md:mt-10 flex md:flex-col-reverse h-full items-center justify-center flex-row sm:flex-col-reverse gap-7">
         <motion.div
           animate={
             inView
               ? { opacity: 1, x: 0, transition: { delay: 0.75 } }
               : { opacity: 0, x: 10 }
           }
-          className="w-full flex basis-[50%] flex-col gap-5 md:basis-[100%] sm:basis-[100%]"
+          className="w-full flex basis-[50%] flex-col sm:gap-5 gap-8 md:basis-[100%] sm:basis-[100%]"
         >
-          <motion.p className="text-xl wordGradient">
+          <motion.p className="text-xl">
             {"Premium wallet for everyone".toUpperCase()}
           </motion.p>
-          <h2 className="text-7xl sm:text-5xl">Make banking easier with Us</h2>
+          <h2 className="text-7xl wordGradient sm:text-5xl">
+            Make banking easier with Us
+          </h2>
           <Link
-            href={"/"}
-            className="w-full py-3 gradient-one rounded-sm text-center"
+            href={"/auth/signup"}
+            className="w-full py-3 text-white gradient-one rounded-sm text-center"
           >
             Sign Up
           </Link>
@@ -95,51 +100,56 @@ const HowItWorks = () => {
           </motion.div>
           <motion.div className="w-full transition-all delay-75 ease-linear flex flex-col gap-5">
             {howItWorksContent.map((content, i) => (
-              <AnimatePresence key={i}>
-                <motion.div
-                  animate={
-                    inView
-                      ? { opacity: 1, x: 0, transition: { delay: 0.75 } }
-                      : { opacity: 0, x: 10 }
-                  }
-                  exit={{ opacity: 0, x: 10 }}
-                  className="flex flex-col gap-2"
+              <motion.div
+                key={i}
+                animate={
+                  inView
+                    ? { opacity: 1, x: 0, transition: { delay: 0.75 } }
+                    : { opacity: 0, x: 10 }
+                }
+                exit={{ opacity: 0, x: 10 }}
+                className="flex flex-col gap-2"
+              >
+                <div
+                  //@ts-ignore
+                  onClick={() => handleOpen(i + 1)}
+                  className="w-full cursor-pointer flex items-center justify-between"
                 >
-                  <div
-                    //@ts-ignore
-                    onClick={() => handleOpen(i + 1)}
-                    className="w-full cursor-pointer flex items-center justify-between"
+                  <h2
+                    className={`text-xl ${
+                      currentState === i + 1 && "text-purple-700"
+                    } hover:text-purple-700 font-semibold`}
                   >
-                    <h2
-                      className={`text-xl ${
-                        currentState === i + 1 && "text-purple-700"
-                      } font-semibold`}
-                    >
-                      {content.step}
-                    </h2>
+                    {content.step}
+                  </h2>
 
-                    <span
-                      className={`${
-                        currentState === i + 1 && "rotate-180 transition-all"
-                      }`}
-                    >
-                      <MdKeyboardArrowDown size={25} />
-                    </span>
-                  </div>
+                  <span
+                    className={`${
+                      currentState === i + 1 && "rotate-180 transition-all"
+                    }`}
+                  >
+                    <MdKeyboardArrowDown size={25} />
+                  </span>
+                </div>
+                <AnimatePresence>
                   {i + 1 === currentState && (
                     <motion.div
                       key={i + 1}
                       initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.5, delay: 0.15 }}
-                      className="text-lg transition-all delay-75 ease-linear"
+                      animate={{
+                        opacity: 1,
+                        transition: { type: "tween", delay: 0.2 },
+                        height: 110,
+                      }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="text-lg"
                     >
-                      <TextStreamer text={content.context} speed={100} />
+                      <TextStreamer text={content.context} speed={20} />
                     </motion.div>
                   )}
-                  <div className="w-full h-[2px] bg-gray-300 rounded-sm" />
-                </motion.div>
-              </AnimatePresence>
+                </AnimatePresence>
+                <div className="w-full h-[2px] bg-gray-300 rounded-sm" />
+              </motion.div>
             ))}
           </motion.div>
         </div>

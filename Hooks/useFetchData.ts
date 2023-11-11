@@ -1,19 +1,31 @@
-import { error } from "console";
 import { useState, useEffect } from "react";
 
+/**
+ * Represents the data structure returned by the useFetchData hook.
+ * @template T - The data type that the hook fetches.
+ */
 export interface FetchDataProps<T> {
-  is_loading: boolean;
-  error: boolean | null;
-  data: T | null;
-  options?: {};
+  is_loading: boolean; // Indicates if data is currently being fetched.
+  error: boolean | null; // Indicates if an error occurred during fetching.
+  data: T | null; // The fetched data or null if an error occurred.
+  options?: {}; // Additional options for future use.
 }
 
+/**
+ * Represents the options for configuring the useFetchData hook.
+ */
 export type FetchDataOptions = {
-  url: string;
-  retry?: boolean;
-  interval?: number;
+  url: string; // The URL from which to fetch data.
+  retry?: boolean; // Whether to retry fetching if an error occurs.
+  interval?: number; // The interval (in milliseconds) for retrying fetch requests.
 };
 
+/**
+ * Custom React hook for fetching data from a specified URL with error handling and retry options.
+ * @template T - The data type to fetch.
+ * @param {FetchDataOptions} options - Configuration options for data fetching.
+ * @returns {FetchDataProps<T>} - A state object containing loading, error, and data information.
+ */
 export const useFetchData = <T>(options: FetchDataOptions) => {
   const { url, interval, retry } = options;
   const [state, setState] = useState<FetchDataProps<T>>({

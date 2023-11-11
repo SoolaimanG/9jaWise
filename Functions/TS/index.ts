@@ -1,6 +1,12 @@
 import nodemailer from "nodemailer";
 import { randomBytes, createHmac } from "crypto";
-import { UserModel } from "@/Models/user";
+import {
+  UserModel,
+  beneficiariesProps,
+  findUserByEmail_Password,
+  findUserByPhoneNumber_Password,
+  userProps,
+} from "@/Models/user";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 
 export type generateAccountProps = {
@@ -21,16 +27,9 @@ export type whatsappProps = {
 };
 
 type refundType = {
-  id: number;
+  user_id: string;
   amount: number;
-};
-
-type props = {
-  email: string;
-  bvn: string;
-  firstname: string;
-  lastname: string;
-  phoneNumber: number | null;
+  old_balance: number;
 };
 
 export type static_account_meta = {
@@ -46,22 +45,6 @@ export type ip_addressProps = {
   country_code: string;
   IPv4: string;
   state: string;
-};
-
-export type static_account_props = {
-  status: string;
-  message: string;
-  meta: {
-    authorization: {
-      transfer_reference: string;
-      transfer_account: number;
-      transfer_bank: string;
-      account_expiration: number;
-      transfer_note: string;
-      transfer_amount: number;
-      mode: string;
-    };
-  };
 };
 
 export const currentTime = () => {
@@ -174,23 +157,23 @@ export const hashText = (salt: string, text: string) => {
 };
 
 //HELPER FUNCTION TO HELP SENT OTP THROUGH PHONE NUMBER
-const client = require("twilio")(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
-
-export const sendWhatsAppMessage = async (props: whatsappProps) => {
-  const { body, number } = props;
-  client.messages
-    .create({
-      from: "whatsapp:+14155238886",
-      body: body,
-      to: `whatsapp:${number}`,
-    })
-    //@ts-ignore
-    .then((message) => console.log("Sent"))
-    .catch((err: any) => console.log(err));
-};
+//const client = require("twilio")(
+//  process.env.TWILIO_ACCOUNT_SID,
+//  process.env.TWILIO_AUTH_TOKEN
+//);
+//
+//export const sendWhatsAppMessage = async (props: whatsappProps) => {
+//  const { body, number } = props;
+//  client.messages
+//    .create({
+//      from: "whatsapp:+14155238886",
+//      body: body,
+//      to: `whatsapp:${number}`,
+//    })
+//    //@ts-ignore
+//    .then((message) => console.log("Sent"))
+//    .catch((err: any) => console.log(err));
+//};
 
 //FLUTTERWAVE APIs And PayStack APIs
 export const getAllBanks = async (number: number) => {
@@ -207,64 +190,6 @@ export const getAllBanks = async (number: number) => {
   } catch (error) {
     console.log(error);
     throw new Error("Something went wrong");
-  }
-};
-
-export const generateAccountNumber = async ({
-  email,
-  bvn,
-  firstname,
-  lastname,
-  phoneNumber,
-}: props) => {
-  try {
-    const body = {
-      email,
-      is_permanent: true,
-      firstname,
-      lastname,
-      bvn,
-      phoneNumber,
-    };
-
-    const res = await fetch(
-      "https://api.flutterwave.com/v3/virtual-account-numbers",
-      {
-        method: "POST",
-        headers: {
-          Authorization: String(process.env.FLW_SECRET_KEY),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      }
-    );
-
-    if (res.ok) {
-      const data: generateAccountProps = await res.json();
-      return { ...data };
-    } else {
-      throw new Error("Something went wrong");
-    }
-  } catch (error) {
-    console.error("Error generating account number:", error);
-    throw error;
-  }
-};
-
-export const countEmails = async (_id: string, emailSent: number) => {
-  const updateValues = {
-    logs: {
-      lastTransaction: 0,
-      totalEmailSent: emailSent + 1,
-    },
-  };
-
-  try {
-    const res = await UserModel.findByIdAndUpdate(_id, updateValues);
-    Promise.resolve(res);
-  } catch (error) {
-    const err = error;
-    Promise.reject(err);
   }
 };
 
@@ -303,105 +228,69 @@ export const get_ipAddress = async () => {
   return ip_address;
 };
 
-export const get_trf_charge = async (amount: string | number) => {
-  let charge: null | number = null;
-
-  const res = await fetch(
-    `https://api.flutterwave.com/v3/transfers/fee?amount=${amount}&currency=NGN`,
-    {
-      headers: {
-        Authorization: String(process.env.FLW_SECRET_KEY),
-      },
-    }
-  );
-
-  if (!res.ok) {
-    charge = null;
-    return;
-  }
-
-  const data = await res.json();
-
-  charge = data?.data?.fee;
-
-  return charge;
-};
-
-export const get_static_account_number = async ({
+export const refund_user = async ({
+  user_id,
   amount,
-  tx_ref,
-  email,
-  meta,
-  is_permanent,
-  bvn,
-}: {
-  amount: number;
-  tx_ref: string;
-  email: string;
-  meta: static_account_meta | null;
-  is_permanent?: boolean;
-  bvn?: string;
-}) => {
-  const payload = {
-    email: email,
-    currency: "NGN",
-    tx_ref: tx_ref,
-    amount: amount,
-    meta: meta,
+  old_balance,
+}: refundType) => {
+  const updates: userProps<beneficiariesProps> | {} = {
+    balance: old_balance + amount,
   };
 
-  let accountDetails: null | static_account_props = null;
-
-  const res = await fetch(
-    `https://api.flutterwave.com/v3/charges?type=bank_transfer`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: String(process.env.FLW_SECRET_KEY),
-      },
-      body: JSON.stringify(payload),
-    }
-  );
-
-  if (!res.ok) {
-    accountDetails = null;
-    return;
-  }
-
-  const data = await res.json();
-
-  accountDetails = data;
-
-  return accountDetails;
-};
-
-export const refund_user = async ({ id, amount }: refundType) => {
-  const payload = {
-    id: id,
-    amount: amount,
-  };
-
-  const res = await fetch(
-    `https://api.flutterwave.com/v3/transactions/${id}/refund`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: String(process.env.FLW_SECRET_KEY),
-      },
-      body: JSON.stringify(payload),
-    }
-  );
-
-  if (!res.ok) {
-    Promise.reject(res.statusText);
-    return;
-  }
-
-  Promise.resolve(res.statusText);
+  await UserModel.findByIdAndUpdate(user_id, updates);
 };
 
 export const sanitize_input = async (user_input: string) => {
-  if (!user_input) return;
-
   return user_input.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+};
+
+export const generate_mock_bank = async (date_of_birth: Date) => {
+  //
+  const IDENTIFIER = "10";
+
+  const current_time = Date.now();
+
+  const day = date_of_birth.getDay();
+  const year = date_of_birth.getFullYear();
+
+  const get_random_year = Math.floor((year / Math.random()) * 9); //Divide year by random number from 0 to 9
+
+  //We always want the get_random_year length should be equal to three thats why this check is necessary
+  const new_year =
+    get_random_year.toString().length === 3
+      ? get_random_year.toString() + Math.floor(Math.random() * 9)
+      : get_random_year.toString();
+
+  let current_time_random_index = "";
+
+  //From the current_time which is millisecond of today's date,month,year,hours,minute and seconds (conbination) get random numbers from it
+  for (let i = 0; i < current_time.toString().length / 2; i++) {
+    //const element = array[i];
+    const random_index = Math.floor(
+      Math.random() * current_time.toString().length
+    );
+
+    current_time_random_index = current_time.toString()[random_index];
+  }
+
+  const unique_account_number = IDENTIFIER.concat(current_time_random_index)
+    .concat(new_year)
+    .concat(Math.floor(Math.random() * day).toString())
+    .concat(Math.floor(Math.random() * 9).toString());
+
+  return unique_account_number.length > 10
+    ? unique_account_number.slice(0, 10)
+    : unique_account_number;
+};
+
+export const user_with_password = async (
+  user_id: string,
+  type: "email" | "phoneNumber"
+) => {
+  const user: userProps<beneficiariesProps> =
+    type === "email"
+      ? await findUserByEmail_Password(user_id)
+      : await findUserByPhoneNumber_Password(user_id);
+
+  return user;
 };

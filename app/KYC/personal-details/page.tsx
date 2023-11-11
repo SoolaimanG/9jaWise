@@ -6,7 +6,8 @@ import Button from "@/components/button";
 import Input from "@/components/input";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useGetId } from "@/Hooks/useGetId";
+import { DatePicker } from "@/components/datePicker";
+import { toast } from "@/components/ui/use-toast";
 
 const Page = () => {
   const [nationality, setNationality] = useState<string | number>("");
@@ -15,9 +16,40 @@ const Page = () => {
   const [maritalStatus, setMaritalStatus] = useState<"single" | "married">(
     "single"
   );
+  const [date_of_birth, setDateOfBirth] = useState<Date | undefined>();
+  const [loading, setLoading] = useState(false);
 
   const router = useRouter();
-  const pathname = useGetId(2);
+
+  const add_personal_details = async () => {
+    setLoading(true);
+
+    const payload = {
+      nationality: nationality,
+      gender: gender,
+      place_of_birth: place_of_birth,
+      marital_status: maritalStatus,
+      date_of_birth: date_of_birth,
+    };
+
+    const res = await fetch("/api/kyc/personal-details", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      setLoading(false);
+      toast({
+        title: `ERROR ${res.status}`,
+        description: res.statusText,
+        variant: "destructive",
+      });
+
+      return;
+    }
+
+    router.push("/KYC/id-details");
+  };
 
   return (
     <div className="w-full flex flex-col gap-3 h-full">
@@ -42,6 +74,11 @@ const Page = () => {
             disabled={false}
             error={false}
             placeholder="Place of birth (Lagos, Lekki)"
+          />
+          <DatePicker
+            title="Enter your date of birth"
+            date={date_of_birth as Date}
+            setDate={setDateOfBirth}
           />
           <span className="w-full items-start justify-start flex text-lg">
             Gender
@@ -96,13 +133,19 @@ const Page = () => {
             />
             <Button
               name="Proceed"
-              onClick={() => router.push(`/KYC/${pathname[2]}/id-details`)}
+              onClick={add_personal_details}
               disabled={
-                maritalStatus && nationality && gender && place_of_birth
+                maritalStatus &&
+                nationality &&
+                gender &&
+                place_of_birth &&
+                date_of_birth &&
+                !loading
                   ? false
                   : true
               }
               varient="filled"
+              states={loading ? "loading" : undefined}
               borderRadius={true}
               className="w-1/4 h-[2.5rem]"
             />

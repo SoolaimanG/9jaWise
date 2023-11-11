@@ -1,8 +1,6 @@
 import { accountNumberCreated } from "@/Emails/email";
 import {
-  countEmails,
-  generateAccountNumber,
-  get_static_account_number,
+  generate_mock_bank,
   hashText,
   random,
   regexTesting,
@@ -12,37 +10,51 @@ import { closeConnection, connectDatabase } from "@/Models";
 import {
   UserModel,
   beneficiariesProps,
-  findUserById,
-  pushNotification,
+  findUserByEmail,
+  findUserByPhoneNumber,
+  notificationsProps,
   userProps,
 } from "@/Models/user";
-import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../auth/[...nextauth]/options";
+import { AccountModel, account_number_props } from "@/Models/accountNumbers";
+import mongoose from "mongoose";
+import { HTTP_STATUS } from "../../donation/withdraw/route";
 
 export const PATCH = async (req: Request) => {
   // Extract the BVN from the request body
   const {
     bvn,
-    email,
+    user_email,
   }: {
     bvn: string;
-    email?: string;
+    user_email?: string;
   } = await req.json();
 
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return new Response(null, {
+      status: HTTP_STATUS.UNAUTHORIZED,
+      statusText: "Unauthorized (Please login)",
+    });
+  }
+
+  const { email } = session.user;
   // Get the user's ID from request headers
-  const _id = req.headers.get("user_id");
-  const check_email = regexTesting("email", email as string);
+  const check_email = regexTesting("email", user_email as string);
 
   if (!bvn) {
     // Return a response if BVN is missing
     return new Response(null, {
-      status: 403,
+      status: HTTP_STATUS.NOT_FOUND,
       statusText: "Missing BVN",
     });
   }
 
-  if (email && !check_email) {
+  if (user_email && !check_email) {
     return new Response(null, {
-      status: 403,
+      status: HTTP_STATUS.BAD,
       statusText: "Invalid Email",
     });
   }
@@ -50,137 +62,195 @@ export const PATCH = async (req: Request) => {
   await connectDatabase();
 
   // Find the user by ID
-  const findUser: userProps<beneficiariesProps> = await findUserById(
-    _id as string
-  );
+  const user: userProps<beneficiariesProps> | null =
+    (await findUserByEmail(email as string)) ||
+    (await findUserByPhoneNumber(email as string));
 
-  if (!findUser.email || !email) {
+  if (!user) {
+    return new Response(null, {
+      status: HTTP_STATUS.NOT_FOUND,
+      statusText: "User not found",
+    });
+  }
+
+  if (user.disableAccount) {
+    return new Response(null, {
+      status: HTTP_STATUS.BAD,
+      statusText: "Account is disabled",
+    });
+  }
+
+  if (user.suspisiousLogin) {
+    return new Response(null, {
+      status: HTTP_STATUS.BAD,
+      statusText: "Cannot perform this action right now",
+    });
+  }
+
+  if (!user.email || !email) {
     // Close the database connection and return a response if email is required
     await closeConnection();
     return new Response(null, {
-      status: 403,
+      status: HTTP_STATUS.BAD,
       statusText: "Email is required for this operation",
     });
   }
 
-  if (findUser.kyc_steps.length < 3) {
-    // Close the database connection and return an unauthorized response if KYC steps are incomplete
+  if (user.kyc_steps.length > 2) {
     await closeConnection();
     return new Response(null, {
-      status: 401,
-      statusText: "Unauthorized",
+      status: HTTP_STATUS.CONFLICT,
+      statusText: "KYC Completed already",
     });
   }
 
-  if (!findUser) {
-    // Close the database connection and return a User Not Found response
+  if (user.KYC_completed) {
     await closeConnection();
     return new Response(null, {
-      status: 404,
-      statusText: "User not found (Invalid ID)",
+      status: HTTP_STATUS.CONFLICT,
+      statusText: "KYC Completed already",
+    });
+  }
+
+  if (user.kyc_steps.length < 2) {
+    await closeConnection();
+    return new Response(null, {
+      status: HTTP_STATUS.CONFLICT,
+      statusText: "Unauthorized (COMPLETE PREVIOUS KYC)",
     });
   }
 
   if (bvn.length !== 11) {
     // Return a response for an invalid BVN number
+    await closeConnection();
     return new Response(null, {
-      status: 403,
+      status: HTTP_STATUS.BAD,
       statusText: "Invalid BVN number",
     });
   }
 
   if (Number.isNaN(bvn)) {
     // Return a response if BVN is not a valid number
+    await closeConnection();
     return new Response(null, {
-      status: 403,
+      status: HTTP_STATUS.BAD,
       statusText: "BVN is not a valid number",
     });
   }
 
+  const user_bvn = hashText(user.BVN.salt, bvn); //Hash User BVN
+
+  /**
+   * Don't worry abount this it wont work because i did get the bvn initially the select for bvn is false so when fetching the user it won't get the BVN as it's a sensitive data to protect but this is just a TEST app and i will allow users to use any number of their choice as BVN and it should do just fine
+   */
+  const find_bvn = await UserModel.findOne({
+    BVN: user_bvn,
+  }).select("BVN");
+
+  if (find_bvn) {
+    return new Response(null, {
+      status: HTTP_STATUS.CONFLICT,
+      statusText: "BVN is in use",
+    });
+  }
+
+  //Use randomBytes -> toString() to generate 126 SALT for hashing
   const salt = random(126);
   const hashBVN = hashText(salt, bvn);
+
+  //Getting the firstName and lastName for the account Number creation
+  const [firstName, lastName, ...rest] = user.fullName.split(" ");
+
   // TODO: Before hashing, generate an account number
+  let account_number = ""; //At initail stage be empty
+  let account_model: account_number_props | null = null; //@ inital state be null
 
-  const [firstName, lastName] = findUser.fullName.split(" ");
+  /**
+   * Do while loop is use here to avoid dublicate account number to see more about the logic for creating account number using the user date of birth ckick in the generate_mock_bank for details , So this event will continue to create a new account number until it is unique i.e it's the only one in the DB
+   */
+  do {
+    account_number = await generate_mock_bank(user.KYC.date_of_birth as Date); //Populate the initial abbove
+    account_model = await AccountModel.findOne({
+      account_number: account_number,
+    }); //Populate the initial abbove
+  } while (account_model);
 
-  // Use this to generate an account number
-  const accountNumber = await get_static_account_number({
-    amount: 0,
-    tx_ref: "",
-    email: findUser.email || email,
-    is_permanent: true,
-    bvn: bvn,
-    meta: {
-      user_id: findUser._id.toString(),
-      type: "fund_account",
-    },
-  });
-
-  if (!accountNumber) {
+  if (account_number.length <= 0) {
     closeConnection();
     return new Response(null, {
-      status: 400,
+      status: HTTP_STATUS.BAD,
       statusText: "Something went wrong",
     });
   }
 
-  // Check if the generated account number is already in use
-  const findAccountNumber = await UserModel.findOne({
-    accountNumber: accountNumber?.meta.authorization.transfer_account,
-  });
+  const new_notification: notificationsProps = {
+    type: "info",
+    time: Date.now(),
+    message: `Hey there! Your unique account number has been created use this only within 9jaWise [Account Number:${account_number}, Account Name:${
+      firstName.toUpperCase() + " " + lastName.toUpperCase()
+    }, Bank Name: 9JAWISE BANK]`,
+  };
 
-  if (findAccountNumber) {
-    // Close the database connection and return a response for a duplicate account number
-    closeConnection();
-    return new Response(null, {
-      status: 429,
-      statusText: "BVN already in use",
-    });
-  }
-
-  const updateValues = {
-    accountNumber: accountNumber?.meta.authorization.transfer_account,
-    accountBank: accountNumber?.meta.authorization.transfer_bank,
+  const updateValues: userProps<beneficiariesProps> | {} = {
     BVN: {
       bvnNumber: hashBVN,
       salt: salt,
     },
     KYC_completed: true,
+    account: {
+      accountBank: "9Ja Bank",
+      accountName: firstName + " " + lastName,
+      accountNumber: account_number,
+    },
+    balance: 5000,
+    notifications: [...user.notifications, new_notification],
+    kyc_steps: ["first", "second", "third"],
+    logs: {
+      ...user.logs,
+      totalEmailSent: user.logs.totalEmailSent + 1,
+    },
   };
 
-  const email_template = accountNumberCreated(
-    accountNumber?.meta.authorization.transfer_account as number
-  );
+  const next_twenty24_hours = 60 * 60 * 24 * 1000;
+
+  const email_template = accountNumberCreated(Number(account_number));
+
+  const save_account_number = new AccountModel<account_number_props>({
+    _id: new mongoose.Types.ObjectId(),
+    account_name: firstName + " " + lastName,
+    account_number: account_number,
+    account_type: "basic",
+    is_permanent: true,
+    bank_name: "9JA WISE BANK",
+    expires: Date.now() + next_twenty24_hours,
+    ref_id: user._id.toString(),
+    created_by: user._id.toString(),
+  });
 
   try {
     await Promise.all([
-      // Update the user's account with the new information
-      UserModel.findOneAndUpdate({ _id }, updateValues),
-      // Send an email notification to the user
+      UserModel.findByIdAndUpdate(user._id, updateValues),
+      save_account_number.save(),
       sendEmail({
+        // Send an email notification to the user
         emailSubject: "New Account Number Created",
         emailTemplate: email_template,
-        emailTo: findUser.email as string,
+        emailTo: user.email as string,
       }),
-      // Push a notification to the user
-      pushNotification(findUser._id.toString(), {
-        message: `Your account number has been created ${accountNumber.meta.authorization.transfer_account}`,
-        time: Date.now(),
-        type: "info",
-      }),
-      // Count the emails sent for the user
-      countEmails(_id as string, findUser.logs.totalEmailSent),
     ]);
-
     // Close the database connection
-    closeConnection();
-
-    // Return a success response
-    return NextResponse.json({ data: accountNumber, message: "OK" });
+    await closeConnection();
+    return new Response(null, {
+      status: HTTP_STATUS.OK,
+      statusText: "KYC Completed (Account Number Created)",
+    });
   } catch (error) {
     // Return an error response in case of an exception
+    // Close the database connection
+    console.log(error);
+    await closeConnection();
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Server error",
     });
   }

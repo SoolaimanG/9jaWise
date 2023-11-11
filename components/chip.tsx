@@ -18,14 +18,14 @@ const Chip = (props: chipProps) => {
   };
 
   return (
-    <div
-      className={`${className} px-2 py-[2px] rounded-md cursor-pointer flex items-center gap-1 ${colors[varient]}`}
+    <p
+      className={`${className} px-2 py-[2px] capitalize rounded-md cursor-pointer flex items-center gap-1 ${colors[varient]}`}
     >
       {typeof icon !== "string" && typeof icon !== "undefined" && (
         <span>{icon}</span>
       )}
       {text}
-    </div>
+    </p>
   );
 };
 

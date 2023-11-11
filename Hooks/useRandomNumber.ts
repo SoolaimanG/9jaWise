@@ -17,6 +17,7 @@ export const useRandomNumber = (
     switch (type) {
       case "normal":
         if (within !== undefined) {
+          // Generate a random number within the specified range
           setNumber(Math.floor(Math.random() * within));
         }
         break;
@@ -24,6 +25,7 @@ export const useRandomNumber = (
         if (neverToGenerate !== undefined) {
           let random;
           do {
+            // Generate a random number until it's not equal to the excluded number
             random = Math.floor(Math.random() * 100);
           } while (random === neverToGenerate);
           setNumber(random);
@@ -33,6 +35,7 @@ export const useRandomNumber = (
         if (between) {
           const { max, min } = between;
           if (max > min) {
+            // Generate a random number within a specified range
             setNumber(Math.floor(Math.random() * (max - min + 1)) + min);
           }
         }

@@ -15,6 +15,7 @@ import {
 import { deletedBucket, savingBucketEmail } from "@/Emails/email";
 import { hashText, sendEmail } from "@/Functions/TS";
 import mongoose from "mongoose";
+import { HTTP_STATUS } from "../donation/withdraw/route";
 
 // Handle HTTP POST requests
 export const POST = async (req: Request) => {
@@ -36,7 +37,7 @@ export const POST = async (req: Request) => {
   // Check if the user is authenticated
   if (!session?.user) {
     return new Response(null, {
-      status: 401,
+      status: HTTP_STATUS.UNAUTHORIZED,
       statusText: "Authentication required",
     });
   }
@@ -59,14 +60,14 @@ export const POST = async (req: Request) => {
     if (!user) {
       await closeConnection();
       return new Response(null, {
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         statusText: "User not found",
       });
     }
 
     if (!user.email && !user.emailVerified) {
       return new Response(null, {
-        status: 403,
+        status: HTTP_STATUS.BAD,
         statusText: "Verify your email address",
       });
     }
@@ -75,7 +76,7 @@ export const POST = async (req: Request) => {
     if (user.suspisiousLogin) {
       await closeConnection();
       return new Response(null, {
-        status: 418,
+        status: HTTP_STATUS.BAD,
         statusText: "Cannot perform this action right now",
       });
     }
@@ -83,7 +84,7 @@ export const POST = async (req: Request) => {
     if (amount <= 10) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: `Cannot save ${amount} Naira`,
       });
     }
@@ -94,14 +95,14 @@ export const POST = async (req: Request) => {
     });
 
     const findSaving_with_name = user.savings.find((save) => {
-      return save.name === name;
+      return save.name.toLowerCase() === name.toLowerCase();
     });
 
     // Check if a saving bucket with the same _id or name already exists
     if (findSaving_with_id) {
       await closeConnection();
       return new Response(null, {
-        status: 429,
+        status: HTTP_STATUS.CONFLICT,
         statusText: "Saving bucket with this ID already exists",
       });
     }
@@ -109,29 +110,24 @@ export const POST = async (req: Request) => {
     if (findSaving_with_name) {
       await closeConnection();
       return new Response(null, {
-        status: 429,
+        status: HTTP_STATUS.CONFLICT,
         statusText: "Saving bucket with this NAME already exists",
       });
     }
 
     // Check if there's not enough balance to save the specified amount
-    if (amount > user.balance) {
+    if (Number(amount) > user.balance) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Not enough amount to save",
       });
     }
 
-    // Calculate the total savings of the user
-    const total_savings = user.savings.reduce((acc, curr) => {
-      return acc + curr.amount;
-    }, 0);
-
     // Check if there's not enough balance to save the specified amount
-    if (user.balance - total_savings < amount) {
+    if (user.balance < Number(amount)) {
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Not enough amount to save",
       });
     }
@@ -189,14 +185,14 @@ export const POST = async (req: Request) => {
 
     await closeConnection();
     return new Response(null, {
-      status: 200,
+      status: HTTP_STATUS.OK,
       statusText: "Bucket Created Successfully",
     });
   } catch (error) {
     // Handle any errors here
     await closeConnection();
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Internal Server Error",
     });
   }
@@ -213,7 +209,7 @@ export const DELETE = async (req: Request) => {
   // Check if the user is authenticated
   if (!session?.user) {
     return new Response(null, {
-      status: 401,
+      status: HTTP_STATUS.UNAUTHORIZED,
       statusText: "Authentication required",
     });
   }
@@ -221,7 +217,7 @@ export const DELETE = async (req: Request) => {
   // Check if the 'id' is missing
   if (!id) {
     return new Response(null, {
-      status: 404,
+      status: HTTP_STATUS.NOT_FOUND,
       statusText: "Missing ID",
     });
   }
@@ -244,7 +240,7 @@ export const DELETE = async (req: Request) => {
     if (!user) {
       await closeConnection();
       return new Response(null, {
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         statusText: "User not found",
       });
     }
@@ -252,7 +248,7 @@ export const DELETE = async (req: Request) => {
     if (user.disableAccount) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Account is disabled",
       });
     }
@@ -261,7 +257,7 @@ export const DELETE = async (req: Request) => {
     if (user.suspisiousLogin) {
       await closeConnection();
       return new Response(null, {
-        status: 400,
+        status: HTTP_STATUS.BAD,
         statusText: "Cannot perform this action right now",
       });
     }
@@ -274,19 +270,20 @@ export const DELETE = async (req: Request) => {
     // Check if the saving bucket doesn't exist
     if (!saving) {
       return new Response(null, {
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         statusText: "Bucket not found",
       });
     }
 
     // Get the current time
     const current_time = Date.now();
+    const saving_time = new Date(saving.date);
 
     // Check if withdrawal is not allowed and the scheduled date is in the future
-    if (!saving.allow_withdraw && saving.date.getTime() > current_time) {
+    if (!saving.allow_withdraw && saving_time.getTime() > current_time) {
       await closeConnection();
       return new Response(null, {
-        status: 403,
+        status: HTTP_STATUS.CONFLICT,
         statusText: "Cannot withdraw savings right now",
       });
     }
@@ -309,7 +306,7 @@ export const DELETE = async (req: Request) => {
       ) {
         await closeConnection();
         return new Response(null, {
-          status: 403,
+          status: HTTP_STATUS.CONFLICT,
           statusText: "Invalid Password",
         });
       }
@@ -368,14 +365,15 @@ export const DELETE = async (req: Request) => {
 
     await closeConnection();
     return new Response(null, {
-      status: 200,
+      status: HTTP_STATUS.OK,
       statusText: "Bucket Deleted Successfully",
     });
   } catch (error) {
+    console.log(error);
     // Handle any errors here
     await closeConnection();
     return new Response(null, {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Internal Server Error",
     });
   }
