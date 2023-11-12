@@ -28,7 +28,7 @@ const OtpLogin: React.FC<otpLoginProps> = ({ loginMode }) => {
       email: loginID as string,
     };
 
-    const res = await fetch("/api/auth/requestOTP", {
+    const res = await fetch("https://9ja-wise.vercel.app/api/auth/requestOTP", {
       method: "POST",
       body: JSON.stringify(payload),
     });
