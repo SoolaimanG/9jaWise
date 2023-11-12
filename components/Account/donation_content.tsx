@@ -22,8 +22,24 @@ const Donation_content = () => {
       ) : (
         <div className="w-full cursor-pointer flex flex-col gap-5">
           {user?.donation_campaigns.map((d) => {
-            const n = useNairaFormatter(d.target_amount);
-            const r = useNairaFormatter(d.amount_raised);
+            const n = Intl.NumberFormat("en-NG", {
+              style: "currency",
+              currency: "NGN",
+              minimumFractionDigits: 2,
+            }).format(
+              d.target_amount >= 1000000
+                ? d.target_amount / 1000000
+                : d.target_amount
+            );
+            const r = Intl.NumberFormat("en-NG", {
+              style: "currency",
+              currency: "NGN",
+              minimumFractionDigits: 2,
+            }).format(
+              d.amount_raised >= 1000000
+                ? d.amount_raised / 1000000
+                : d.amount_raised
+            );
             return (
               <div
                 key={d.id}
@@ -140,7 +156,15 @@ const Donation_content = () => {
                               >
                                 <p className="capitalize">{_.name}</p>
                                 <p className="wordGradient">
-                                  {useNairaFormatter(_.amount)}
+                                  {Intl.NumberFormat("en-NG", {
+                                    style: "currency",
+                                    currency: "NGN",
+                                    minimumFractionDigits: 2,
+                                  }).format(
+                                    _.amount >= 1000000
+                                      ? _.amount / 1000000
+                                      : _.amount
+                                  )}
                                 </p>
                               </div>
                             ))}

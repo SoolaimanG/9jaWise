@@ -60,7 +60,11 @@ const Page = () => {
 
   //Using this to show Money In and Money Out
   const history_details = (amount: number, type: "Money In" | "Money Out") => {
-    const naira = useNairaFormatter(amount || 0);
+    const naira = Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 2,
+    }).format(amount >= 1000000 ? amount / 1000000 : amount);
     return (
       <div
         className={`w-fit cursor-pointer px-2 py-1 rounded-sm flex items-center gap-2 ${

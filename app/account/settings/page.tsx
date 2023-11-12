@@ -123,14 +123,13 @@ const Page = () => {
               </div>
             )
           }
-          children={
-            <div className="w-full p-2">
-              {settings.name === "Personal" && <Personal />}
-              {settings.name === "Report" && <Report />}
-              {settings.name === "Security" && <Security />}
-            </div>
-          }
-        />
+        >
+          <div className="w-full p-2">
+            {settings.name === "Personal" && <Personal />}
+            {settings.name === "Report" && <Report />}
+            {settings.name === "Security" && <Security />}
+          </div>
+        </SheetComp>
       ))}
       <div className="w-full flex mt-5 flex-col gap-2">
         <Button

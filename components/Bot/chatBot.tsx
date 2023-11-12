@@ -358,96 +358,95 @@ const ChatBot = ({
             />
           </header>
         }
-        children={
-          <div ref={divRef} className="pt-24 overflow-auto pb-24 h-full w-full">
-            {conversation.length === 0 && <Instructions />}
-            {
-              <div
-                ref={scrollingRef}
-                className={`w-full flex px-2 flex-col gap-3`}
-              >
-                {conversation.map((c, i) => (
-                  <div key={i}>
-                    {c.user && (
-                      <div className="w-full flex items-end justify-end">
-                        <p className="w-fit text-white p-2 cursor-pointer bg-purple-300 rounded-t-xl rounded-bl-xl">
-                          {c.user}
-                        </p>
-                      </div>
-                    )}
-                    {c.chatBot ? (
-                      <div className="w-full mt-1 flex flex-col gap-2 items-start justify-start">
-                        <Response
-                          query={userQuery as string}
-                          setQuery={setUserQuery}
-                          reply={c.chatBot.reply}
-                          options={c.chatBot.options}
-                          chatBotImage={ChatBot_Constant.chat_bot_image}
-                        />
-                      </div>
-                    ) : (
-                      <BotLoading />
-                    )}
-                  </div>
-                ))}
-              </div>
-            }
-            {/* Input Section */}
-            <div className="absolute z-10 w-full left-0 bottom-0">
-              {/* Modes */}
-              {(conversation.length === 0 || showModes) && (
-                <AnimatePresence>
-                  <motion.div
-                    animate="visible"
-                    initial="hidden"
-                    exit="hidden"
-                    variants={containerVariant}
-                    className="w-full gap-2 px-2 pb-1 flex items-center justify-between"
-                  >
-                    {modes.map((m, i) => (
-                      <motion.button
-                        variants={eachItemVariant}
-                        //@ts-ignore
-                        onClick={() => setCurrentMode(m.mode)}
-                        className={`w-full ${
-                          m.mode === currentMode
-                            ? "bg-purple-700 text-white"
-                            : "bg-purple-100 text-purple-700"
-                        } p-2 rounded-md w-full sm:h-[4rem] md:h-[4rem] hover:bg-purple-700 hover:text-white`}
-                        key={i}
-                      >
-                        {m.name}
-                      </motion.button>
-                    ))}
-                  </motion.div>
-                </AnimatePresence>
-              )}
-              <BotError error={state.error} />
-              <form
-                onSubmit={sendRequest}
-                className={`w-full ${background} p-2 md:px-2 sm:px-2 sm:py-3 md:py-3 flex gap-1 items-center `}
-              >
-                <Input
-                  value={userQuery}
-                  setValue={setUserQuery}
-                  type={inputType}
-                  error={false}
-                  disabled={false}
-                  className="w-full"
-                  placeholder="Bague ready to answer your questions"
-                />
-                <button
-                  disabled={state.loading}
-                  onClick={sendRequest}
-                  className="p-3 disabled:bg-purple-500 disabled:cursor-pointer rounded-md bg-purple-700 text-white"
-                >
-                  <IoMdSend size={15} />
-                </button>
-              </form>
+      >
+        <div ref={divRef} className="pt-24 overflow-auto pb-24 h-full w-full">
+          {conversation.length === 0 ? <Instructions /> : <div />}
+          {
+            <div
+              ref={scrollingRef}
+              className={`w-full flex px-2 flex-col gap-3`}
+            >
+              {conversation.map((c, i) => (
+                <div key={i}>
+                  {c.user && (
+                    <div className="w-full flex items-end justify-end">
+                      <p className="w-fit text-white p-2 cursor-pointer bg-purple-300 rounded-t-xl rounded-bl-xl">
+                        {c.user}
+                      </p>
+                    </div>
+                  )}
+                  {c.chatBot ? (
+                    <div className="w-full mt-1 flex flex-col gap-2 items-start justify-start">
+                      <Response
+                        query={userQuery as string}
+                        setQuery={setUserQuery}
+                        reply={c.chatBot.reply}
+                        options={c.chatBot.options}
+                        chatBotImage={ChatBot_Constant.chat_bot_image}
+                      />
+                    </div>
+                  ) : (
+                    <BotLoading />
+                  )}
+                </div>
+              ))}
             </div>
+          }
+          {/* Input Section */}
+          <div className="absolute z-10 w-full left-0 bottom-0">
+            {/* Modes */}
+            {(conversation.length === 0 || showModes) && (
+              <AnimatePresence>
+                <motion.div
+                  animate="visible"
+                  initial="hidden"
+                  exit="hidden"
+                  variants={containerVariant}
+                  className="w-full gap-2 px-2 pb-1 flex items-center justify-between"
+                >
+                  {modes.map((m, i) => (
+                    <motion.button
+                      variants={eachItemVariant}
+                      //@ts-ignore
+                      onClick={() => setCurrentMode(m.mode)}
+                      className={`w-full ${
+                        m.mode === currentMode
+                          ? "bg-purple-700 text-white"
+                          : "bg-purple-100 text-purple-700"
+                      } p-2 rounded-md w-full sm:h-[4rem] md:h-[4rem] hover:bg-purple-700 hover:text-white`}
+                      key={i}
+                    >
+                      {m.name}
+                    </motion.button>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
+            )}
+            <BotError error={state.error} />
+            <form
+              onSubmit={sendRequest}
+              className={`w-full ${background} p-2 md:px-2 sm:px-2 sm:py-3 md:py-3 flex gap-1 items-center `}
+            >
+              <Input
+                value={userQuery}
+                setValue={setUserQuery}
+                type={inputType}
+                error={false}
+                disabled={false}
+                className="w-full"
+                placeholder="Bague ready to answer your questions"
+              />
+              <button
+                disabled={state.loading}
+                onClick={sendRequest}
+                className="p-3 disabled:bg-purple-500 disabled:cursor-pointer rounded-md bg-purple-700 text-white"
+              >
+                <IoMdSend size={15} />
+              </button>
+            </form>
           </div>
-        }
-      />
+        </div>
+      </SheetComp>
     </div>
   );
 };

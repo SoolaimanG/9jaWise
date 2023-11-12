@@ -351,7 +351,13 @@ const Saving = () => {
         ) : (
           <div className="w-full mt-3 grid grid-cols-3 gap-2 md:grid-cols-2 sm:grid-cols-2 ">
             {savings.map((saves, i) => {
-              const n = useNairaFormatter(saves.amount);
+              const n = Intl.NumberFormat("en-NG", {
+                style: "currency",
+                currency: "NGN",
+                minimumFractionDigits: 2,
+              }).format(
+                saves.amount >= 1000000 ? saves.amount / 1000000 : saves.amount
+              );
               const icon = icons.filter((i) => {
                 return i.name === saves.icon_name;
               });

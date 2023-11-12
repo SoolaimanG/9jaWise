@@ -122,19 +122,21 @@ const Power = () => {
 
   const powerPlans = (
     <div className="w-full grid grid-cols-3 gap-3 md:grid-cols-2 sm:grid-cols-1">
-      {plans.map((p) => (
-        <Button
-          className="w-full h-[2.5rem]"
-          borderRadius={true}
-          name={Intl.NumberFormat("en-NG", {
-            style: "currency",
-            currency: "NGN",
-            minimumFractionDigits: 2,
-          }).format(p.amount)}
-          onClick={() => setAmount(p.amount)}
-          disabled={false}
-          varient={p.amount === amount ? "filled" : "outlined"}
-        />
+      {plans.map((p, _) => (
+        <div className="w-full" key={_}>
+          <Button
+            className="w-full h-[2.5rem]"
+            borderRadius={true}
+            name={Intl.NumberFormat("en-NG", {
+              style: "currency",
+              currency: "NGN",
+              minimumFractionDigits: 2,
+            }).format(p.amount)}
+            onClick={() => setAmount(p.amount)}
+            disabled={false}
+            varient={p.amount === amount ? "filled" : "outlined"}
+          />
+        </div>
       ))}
     </div>
   );
