@@ -9,9 +9,7 @@ const Header = ({ state }: { state: "SignIn" | "SignUp" }) => {
         {" "}
         <span className="sm:hidden">
           {" "}
-          {state === "SignIn"
-            ? "Have an account?"
-            : "Dont have an account"}{" "}
+          {state === "SignIn" ? "Have an account?" : "Create account"}{" "}
         </span>
         <Link
           className="text-purple-600"

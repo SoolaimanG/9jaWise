@@ -305,48 +305,7 @@ export const POST = async (req: Request) => {
         });
       }
 
-      //      if (user.settings.twoFactorAuthentication) {
-      //        if (otp) {
-      //          const res = await fetch(
-      //            `${process.env.HOSTNAME}/api/auth/requestOTP?otp=${otp}&email=${user.email}`
-      //          );
-      //
-      //          if (!res.ok) {
-      //            await login_attempt(user, req.headers.get("user-agent") as string);
-      //            await closeConnection();
-      //            return new Response(null, {
-      //              status: res.status,
-      //              statusText: res.statusText,
-      //            });
-      //          }
-      //        } else {
-      //          const payload: otpProps = {
-      //            loginMode: "email",
-      //            email: user.email as string,
-      //          };
-      //
-      //          const res = await fetch(
-      //            `${process.env.NEXTAUTH_URL}/api/auth/requestOTP`,
-      //            {
-      //              method: "POST",
-      //              body: JSON.stringify(payload),
-      //            }
-      //          );
-      //
-      //          if (!res.ok) {
-      //            await closeConnection();
-      //            return new Response(null, {
-      //              status: res.status,
-      //              statusText: res.statusText,
-      //            });
-      //          }
-      //
-      //          return new Response(null, {
-      //            status: 300,
-      //            statusText: res.statusText,
-      //          });
-      //        }
-      //      }
+      //[2FA will be added later] --------->
 
       // Update the last login and other user data
       const update: userProps<beneficiariesProps> | {} = {

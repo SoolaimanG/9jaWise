@@ -57,7 +57,7 @@ const Page = () => {
     };
 
     SetAccountState("loading"); //Start loading
-    const res = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/signup`, {
+    const res = await fetch(`/api/auth/signup`, {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -67,7 +67,7 @@ const Page = () => {
       SetAccountState("failed");
       toast({
         title: `ERROR ${res.status}`,
-        description: res.statusText,
+        description: res.statusText || "Something went wrong",
         variant: "destructive",
       });
       return;
