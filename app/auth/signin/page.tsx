@@ -24,7 +24,7 @@ const Page = () => {
         {/* Login Content */}
         <FadeIn>
           <div className="w-full mt-5 items-center justify-center flex flex-col gap-3">
-            <div className="w-1/2 sm:w-3/4 m-auto p-1 bg-gray-200 justify-between dark:text-purple-500 gap-3 flex items-center rounded-md">
+            <div className="w-1/2 md:w-[70%] sm:w-[65%] m-auto p-1 bg-gray-200 justify-between dark:text-purple-500 gap-3 flex items-center rounded-md">
               <button
                 onClick={() => setLoginType("otp")}
                 className={`w-full ${

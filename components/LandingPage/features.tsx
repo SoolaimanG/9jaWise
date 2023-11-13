@@ -1,14 +1,14 @@
-import React from "react";
+//----------->All Imports<-----------
+import React, { useRef } from "react";
 import DebitCard from "../debitCard";
 import Chip from "../chip";
 import { FaHandshake } from "react-icons/fa";
-import { motion } from "framer-motion";
-import { useInView } from "react-intersection-observer";
+import { motion, useInView } from "framer-motion";
 import Rings from "./rings";
 import { RiSecurePaymentFill } from "react-icons/ri";
 import { MdOutlineAccountBalanceWallet, MdSupportAgent } from "react-icons/md";
-import { useStore } from "@/provider";
 
+//Content for displaying features
 const featuresOne = [
   {
     id: 1,
@@ -23,7 +23,6 @@ const featuresOne = [
     doc: "Our platform ensures the security of your payments.",
   },
 ];
-
 const featuresTwo = [
   {
     id: 1,
@@ -39,39 +38,36 @@ const featuresTwo = [
   },
 ];
 
+//Framer motion varients for animation
+const container = {
+  hidden: {
+    opacity: 0,
+    y: 50,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      stiffness: 1,
+      delay: 0.75,
+      staggerChildren: 0.5,
+    },
+  },
+};
+const item = {
+  hidden: {
+    opacity: 0,
+    y: 50,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+  },
+};
+
 const Features = () => {
-  const [ref, inView] = useInView({
-    triggerOnce: true,
-    threshold: 0.3,
-  });
-  const { is_darkmode } = useStore();
-
-  const container = {
-    hidden: {
-      opacity: 0,
-      y: 50,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        stiffness: 1,
-        delay: 0.75,
-        staggerChildren: 0.5,
-      },
-    },
-  };
-
-  const item = {
-    hidden: {
-      opacity: 0,
-      y: 50,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-    },
-  };
+  const ref = useRef<HTMLElement | null>(null); //a useRef for access the element we want to track if it's in view or not
+  const inView = useInView(ref, { once: true }); //Use inView is a framer motion hook that detects when an element enter view or leave [This is set to once because we want to observe just once]
 
   return (
     <motion.section
@@ -106,8 +102,8 @@ const Features = () => {
       <Rings position="top-[35%] left-[38%]" />
       <div className="w-full flex gap-2 flex-col items-center justify-center">
         <Chip text="Features" varient="default" />
-        <p className="text-4xl wordGradient">Features</p>
-        <span className="text-center">
+        <p className="text-4xl sm:text-[1.6rem] wordGradient">Features</p>
+        <span className="text-center sm:text-base">
           Rewards and benefit without the downside of 9jawise
         </span>
       </div>
@@ -170,13 +166,15 @@ const Features = () => {
             <motion.div
               variants={item}
               key={feature.id}
-              className={`w-full flex cursor-pointer md:items-start sm:items-start md:justify-start sm:justify-start items-end justify-end flex-col gap-2`}
+              className={`w-full transition-all ease-linear delay-75 cursor-pointer items-end justify-end sm:items-start sm:justify-start flex md:items-start md:justify-start flex-col gap-2`}
             >
-              <span className="p-2 text-white text-3xl gradient-two rounded-md">
+              <span className="p-2 text-white text-3xl gradient-one rounded-md">
                 {feature.icon}
               </span>
-              <p className="text-3xl text-right">{feature.header}</p>
-              <p className="dark:text-gray-300 text-slate-600 text-right">
+              <p className="text-3xl text-right md:text-left sm:text-left">
+                {feature.header}
+              </p>
+              <p className="dark:text-gray-300 text-slate-600 text-right md:text-left sm:text-left">
                 {feature.doc}
               </p>
             </motion.div>

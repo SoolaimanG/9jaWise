@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import type { Metadata } from "next";
 import LayOutShow from "@/components/Bot/layOutShow";
+import DarkModeComponent from "@/Functions/TSX/darkMode_Comp";
 
 export const metadata: Metadata = {
   title: "9JA WISE",
@@ -16,9 +17,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={` dark:bg-blacks-500 dark:text-gray-200`}>
-        {children}
-        <Toaster />
-        <LayOutShow />
+        <DarkModeComponent>
+          {children}
+          <Toaster />
+          <LayOutShow />
+        </DarkModeComponent>
       </body>
     </html>
   );

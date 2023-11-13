@@ -46,6 +46,7 @@ export type stateProps = {
   user: userProps<beneficiariesProps> | null;
   donation: donationProps[];
   refresh_count: number;
+  darkmode: "dark" | "light";
 };
 export type actionProps = {
   setIs_darkmode: (value: boolean) => void;
@@ -59,6 +60,7 @@ export type actionProps = {
   addDonation: (props: donationProps) => void;
   delete_donation: (id: string) => void;
   try_refresh: () => void;
+  set_Mode: (mode: "dark" | "light") => void;
 };
 export const useStore = create<stateProps & actionProps>((set) => ({
   is_darkmode: false,
@@ -69,6 +71,7 @@ export const useStore = create<stateProps & actionProps>((set) => ({
   donation: [],
   refresh_count: 0,
   user: null,
+  darkmode: "light",
   setIs_darkmode(prop) {
     set((state) => ({
       ...state,
@@ -128,6 +131,12 @@ export const useStore = create<stateProps & actionProps>((set) => ({
     set((state) => ({
       ...state,
       donation: state.donation.filter((i) => i.id !== id),
+    }));
+  },
+  set_Mode(mode) {
+    set((state) => ({
+      ...state,
+      darkmode: mode,
     }));
   },
   try_refresh() {

@@ -276,8 +276,6 @@ const ChatBot = ({
    * A useEffect for keeping an eye on the change happening which userQuery which is the user Input
    */
 
-  console.log(accountCreationDetails);
-
   useEffect(() => {
     setInputType("text");
 

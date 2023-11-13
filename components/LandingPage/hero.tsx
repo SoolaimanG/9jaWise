@@ -9,7 +9,7 @@ import { useScreenSize } from "@/Hooks/useScreenSize";
 import Rings from "./rings";
 import SlideIn from "../Animations/slideIn";
 import FadeIn from "../Animations/fadeIn";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCheck } from "@/Hooks/useCheck";
 
@@ -35,8 +35,8 @@ export const _UNCHANGEDDATA = [
 
 const Hero = () => {
   const [email, setEmail] = useState<string | number>(""); //Email state
-
   const { is_darkmode } = useStore(); //Zustand state
+  const [amount, setAmount] = useState<number>(1000);
 
   //-------->Custom Hooks<------------
   const size = useScreenSize();
@@ -52,6 +52,14 @@ const Hero = () => {
     },
   };
 
+  useEffect(() => {
+    const amounts = [500, 1000, 10000, 200, 1000000, 35000, 2000];
+
+    const random_number = Math.floor(Math.random() * amounts.length);
+
+    setAmount(amounts[random_number]);
+  }, []);
+
   return (
     <section
       id="home"
@@ -61,7 +69,7 @@ const Hero = () => {
       <GradientBG />
       {/* RING is a component that displays a blur bold circle */}
       <Rings position="top-[15%] right-0 -mr-[3rem] md:right-0 sm:right-0" />
-      <div className="w-full px-5 md:pt-28 sm:pt-28 h-full flex gap-5 sm:flex-col md:flex-col">
+      <div className="w-full px-5 sm:px-3 md:pt-28 sm:pt-28 h-full flex gap-5 sm:flex-col md:flex-col">
         <div className="flex basis-[70%] w-full h-full items-center sm:basis-[100%] md:basis-[100%]">
           <div className="w-full flex flex-col gap-3">
             <motion.strong
@@ -86,21 +94,25 @@ const Hero = () => {
               integration between business and payment
             </motion.h2>
             <motion.p
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -100 }}
               animate={{ opacity: 1, x: 0 }}
-              className="text-2xl sm:text-xl font-bold"
+              className="text-2xl sm:text-lg font-bold"
             >
               Financial success is not an occurance{" "}
               <motion.span
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
+                initial={{ opacity: 0, y: -100 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  transition: { delay: 0 },
+                }}
                 className="cursor-pointer bg-purple-600 w-fit text-white px-3 py-1"
               >
                 It&apos;s a habit
               </motion.span>
             </motion.p>
             <motion.span
-              initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: -100 }}
               animate={{
                 opacity: 1,
                 y: 0,
@@ -116,19 +128,20 @@ const Hero = () => {
               animate={{ y: 0, opacity: 1, transition: { delay: 0.5 } }}
               className="flex w-full gap-3 items-center"
             >
-              <Input
-                value={email}
-                className="w-[65%]"
-                setValue={setEmail}
-                type="email"
-                error={!check_email && email ? true : false}
-                placeholder="Email address"
-              />
+              <div className="w-[75%] sm:w-[60%] md:w-[70%]">
+                <Input
+                  value={email}
+                  setValue={setEmail}
+                  type="email"
+                  error={!check_email && email ? true : false}
+                  placeholder="Email address"
+                />
+              </div>
               <Button
                 name="Get Started"
                 varient="filled"
                 disabled={check_email && email ? false : true}
-                className="w-1/5 h-[2.5rem] sm:w-[35%] md:w-[35%] sm:text-[0.9rem]"
+                className="w-[25%] h-[2.5rem] sm:w-[40%] md:w-[30%] sm:text-[0.9rem]"
                 borderRadius={true}
                 onClick={() => {
                   check_email
@@ -149,7 +162,7 @@ const Hero = () => {
               type="glassmorphism"
               name="Babatunde Idris"
               accountNumber={9490268191}
-              balance={500}
+              balance={amount}
             />
             <span className="w-full flex items-end justify-end it">
               More than banking....

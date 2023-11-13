@@ -57,7 +57,7 @@ const Page = () => {
     };
 
     SetAccountState("loading"); //Start loading
-    const res = await fetch(`https://9ja-wise.vercel.app/api/auth/signup`, {
+    const res = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/signup`, {
       method: "POST",
       body: JSON.stringify(payload),
     });

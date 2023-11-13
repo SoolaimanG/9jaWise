@@ -9,8 +9,8 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useStore } from "@/provider";
 
+//TYpes available in nav_bar
 export type pathProps = "#how-it-works" | "#home" | "#features" | "#why-us";
-
 export type navListProps = {
   id: number;
   name: string;
@@ -40,33 +40,34 @@ export const navList: navListProps[] = [
   },
 ];
 
+//Framer Motion Varients for animating some elements
+const container = {
+  hidden: { opacity: 0, y: -10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      delayChildren: 0.3,
+      staggerChildren: 0.2,
+    },
+  },
+};
+const item = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+  },
+};
+
 const LandingNavBar = () => {
-  const [isNavOpen, setIsNavOpen] = useState(false);
-  const [awayFromTop, setAwayFromTop] = useState(false);
-  const { is_darkmode } = useStore();
+  const [isNavOpen, setIsNavOpen] = useState(false); //Opening navbar
+  const [awayFromTop, setAwayFromTop] = useState(false); //Track if navbar is away from the top
+  const { is_darkmode } = useStore(); //Zustand state management
 
-  const [currentPath, setCurrentPath] = useState<pathProps>("#home");
+  const [currentPath, setCurrentPath] = useState<pathProps>("#home"); //Our current path starts with ---> home
 
-  const container = {
-    hidden: { opacity: 0, y: -10 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        delayChildren: 0.3,
-        staggerChildren: 0.2,
-      },
-    },
-  };
-
-  const item = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-    },
-  };
-
+  //This is to change the size of the navbar when scrolling
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 100) {
@@ -149,7 +150,7 @@ const LandingNavBar = () => {
             <motion.div variants={item}>
               <Link
                 className={`text-xl px-5 py-2 rounded-md border border-purple-600 text-purple-600`}
-                href={"/"}
+                href={"/auth/signin"}
               >
                 Sign In
               </Link>
@@ -164,13 +165,7 @@ const LandingNavBar = () => {
             </motion.div>
           </motion.div>
         </div>
-        {/* [MOBILE NAVBAR STARTS HERE] */}
-        {isNavOpen && (
-          <div
-            onClick={() => setIsNavOpen(false)}
-            className="w-screen hidden sm:block md:block h-screen absolute left-0 top-0 glassmorph z-10"
-          />
-        )}
+        {/* ---------> [MOBILE NAVBAR STARTS HERE]<--------- */}
         <div
           onClick={() => setIsNavOpen((prev) => !prev)}
           className="hidden z-30 sm:block md:block cursor-pointer"
@@ -191,7 +186,7 @@ const LandingNavBar = () => {
                   transition: { stiffness: 0.5 },
                 }}
                 exit={{ opacity: 0, translateX: -100 }}
-                className="fixed w-[80%] flex flex-col gap-5 h-screen bg-gray-100 dark:bg-slate-700 left-0 top-0 pt-2 pb-5"
+                className="fixed w-[80%] sm:w-[85%] flex flex-col gap-5 h-screen bg-gray-100 dark:bg-slate-700 left-0 top-0 pt-2 pb-5"
               >
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
@@ -225,11 +220,15 @@ const LandingNavBar = () => {
                       <a
                         className={`text-2xl transition delay-75 hover:text-purple-600
                      } ${
-                       n.path === currentPath && "text-purple-600 navbarHover"
+                       n.path === currentPath &&
+                       "text-purple-600 flex items-center gap-3"
                      }`}
                         href={n.path}
                       >
                         {n.name}
+                        {n.path === currentPath && (
+                          <div className="w-[50%] h-[2px] bg-purple-500 rounded-sm" />
+                        )}
                       </a>
                     </motion.li>
                   ))}
@@ -237,13 +236,13 @@ const LandingNavBar = () => {
                 <motion.div className="flex items-center w-full gap-3 px-3 justify-center">
                   <Link
                     className={`text-xl text-center w-full py-2 rounded-md border border-purple-600 text-purple-600`}
-                    href={"/"}
+                    href={"/auth/signin"}
                   >
                     Sign In
                   </Link>
                   <Link
                     className={`text-xl text-center w-full py-2 rounded-md bg-purple-600 text-white`}
-                    href={"/"}
+                    href={"/auth/signup"}
                   >
                     Sign Up
                   </Link>

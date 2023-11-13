@@ -1,7 +1,7 @@
 "use client";
 
 import { useStore } from "@/provider";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BsSun } from "react-icons/bs";
 import { CiDark } from "react-icons/ci";
 
@@ -12,44 +12,36 @@ export type darkModeProps = {
 };
 
 const DarkMode = (props: darkModeProps) => {
+  /**
+   * We are destructuring the props to get the color[color is only white and purple] and position[This position is vertical and horizonatl] and hide_name[If we want to render only icons]
+   */
   const { color, position, hide_name } = props;
-  const checkExistance = typeof window !== "undefined"; //Using this because of the nature of NEXTJS(window not defined)
-  const [mode, setMode] = useState<"dark" | "light" | undefined>(
+
+  // First check if the window properties are available
+  const checkExistance = typeof window !== "undefined"; // Using this because of the nature of NEXTJS (window not defined)
+  const [mode, setMode] = useState<"dark" | "light">(
     //@ts-ignore
-    checkExistance ? localStorage.getItem("theme") | "light" : undefined
+    checkExistance && localStorage.getItem("theme")
+      ? localStorage.getItem("theme") || "light"
+      : checkExistance
+      ? localStorage.getItem("theme")
+      : "light"
   );
-  const { setIs_darkmode } = useStore();
+  const { setIs_darkmode, is_darkmode } = useStore(); // Zustand State Management
 
   const handleClick = () => {
-    setMode(mode === "dark" ? "light" : "dark");
-
     if (mode === "light") {
       localStorage.theme = "dark";
-      window.document.documentElement.classList.add("dark"); //Set the HTML classname to dark if its on light mode [D-1]
-      setIs_darkmode(true);
+      window.document.documentElement.classList.add("dark"); // Set the HTML classname to dark if it's on light mode [D-1]
+      setMode("dark");
     } else if (mode === "dark") {
       localStorage.theme = "light";
-      window.document.documentElement.classList.remove("dark"); //Opposite of D-1
-      setIs_darkmode(false);
+      window.document.documentElement.classList.remove("dark"); // Opposite of D-1
+      setMode("light");
     }
+
+    setIs_darkmode(!is_darkmode);
   };
-
-  useEffect(() => {
-    if (!checkExistance) {
-      localStorage.setItem("theme", "light");
-      setIs_darkmode(false);
-      return;
-    }
-
-    setMode(localStorage.theme);
-    if (localStorage.theme === "light" || localStorage.theme === undefined) {
-      window.document.documentElement.classList.remove("dark");
-      setIs_darkmode(false);
-    } else {
-      window.document.documentElement.classList.add("dark");
-      setIs_darkmode(true);
-    }
-  }, [checkExistance]);
 
   return (
     <div

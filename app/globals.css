@@ -345,3 +345,12 @@ body{
   background: -webkit-linear-gradient(6deg, rgba(0, 0, 0, 0.5) 0%, rgba(197, 197, 197, 0.5) 100%);
   background: linear-gradient(6deg, rgba(0, 0, 0, 0.5) 0%, rgba(197, 197, 197, 0.5) 100%);
 }
+
+
+/* --------------->MEDIA QUERY<----------------- */
+
+@media (max-width: 290px) {
+  .line::before {
+    width: 4.5rem;
+  }
+}

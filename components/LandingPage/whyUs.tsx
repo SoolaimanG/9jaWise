@@ -7,9 +7,9 @@ import {
 import { CgInsights } from "react-icons/cg";
 import { GiTrade } from "react-icons/gi";
 import { TbClockRecord } from "react-icons/tb";
-import { motion } from "framer-motion";
-import { useInView } from "react-intersection-observer";
-import React from "react";
+import { motion, useInView } from "framer-motion";
+//import { useInView } from "react-intersection-observer";
+import React, { useRef } from "react";
 
 export const whyUsContent = [
   {
@@ -62,48 +62,47 @@ export const whyUsContent = [
   },
 ];
 
-const generateReasons = (reasons: string[]) => {
+//Framer Motion Varients
+const animationVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+};
+const container = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      delayChildren: 0.3,
+      staggerChildren: 0.2,
+    },
+  },
+};
+const itemVarient = {
+  hidden: { y: 10, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+  },
+};
+
+//Like a mini component to render the reasons why users to choose us
+const why_us_reasons = (reasons: string[]) => {
   return reasons.map((reason, i) => (
     <React.Fragment key={i}>{reason}</React.Fragment>
   ));
 };
 
 const WhyUs = () => {
-  const [ref, inView] = useInView({
-    triggerOnce: true,
-    threshold: 0.5, // Set the threshold for when to trigger
-  });
-
-  const animationVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1 },
-  };
-
-  const container = {
-    hidden: { opacity: 0, y: 10 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        delayChildren: 0.3,
-        staggerChildren: 0.2,
-      },
-    },
-  };
-
-  const itemVarient = {
-    hidden: { y: 10, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-    },
-  };
+  const ref = useRef<HTMLElement | null>(null); //a useRef for access the element we want to track if it's in view or not
+  //Use react-intersection-observer to know when an element enter view
+  const inView = useInView(ref, { once: true }); //Use inView is a framer motion hook that detects when an element enter view or leave [This is set to once because we want to observe just once]
 
   return (
     <section
       id="why-us"
       ref={ref}
-      className="w-full px-5 h-screen pb-3 md:h-fit sm:h-fit mt-5"
+      className="w-full px-5 sm:px-3 h-screen pb-3 md:h-fit sm:h-fit mt-5"
     >
       <motion.div
         animate={inView ? "visible" : "hidden"}
@@ -112,7 +111,9 @@ const WhyUs = () => {
         className="flex items-center justify-center flex-col gap-2"
       >
         <Chip varient="default" text="Why us" />
-        <h2 className="text-3xl wordGradient">Choose us its the right way.</h2>
+        <h2 className="text-3xl md:text-2xl sm:text-lg text-center wordGradient">
+          Choose us its the right way.
+        </h2>
       </motion.div>
       <motion.div
         animate={inView ? "visible" : "hidden"}
@@ -130,7 +131,7 @@ const WhyUs = () => {
             <span className="text-4xl">{item.icons}</span>
             <strong className="text-xl">{item.header}</strong>
             <li className="w-full flex flex-wrap">
-              {generateReasons(item.reasons)}
+              {why_us_reasons(item.reasons)}
             </li>
           </motion.div>
         ))}
