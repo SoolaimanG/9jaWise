@@ -36,7 +36,7 @@ const Header = () => {
           1
         </div>
         <div
-          className={`w-[9.5rem] ${
+          className={`w-[9.5rem] md:w-[8.5rem] sm:w-[7.5rem] ${
             KYC_steps.includes(1) ? "bg-purple-500" : "bg-gray-400"
           } h-[1.3px]`}
         />
@@ -48,7 +48,7 @@ const Header = () => {
           2
         </div>
         <div
-          className={`w-[9.5rem] ${
+          className={`w-[9.5rem] md:w-[8.5rem] sm:w-[7.5rem] ${
             KYC_steps.includes(2) ? "bg-purple-500" : "bg-gray-400"
           } h-[1.3px]`}
         />

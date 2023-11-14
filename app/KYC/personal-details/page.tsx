@@ -147,7 +147,7 @@ const Page = () => {
               varient="filled"
               states={loading ? "loading" : undefined}
               borderRadius={true}
-              className="w-1/4 h-[2.5rem]"
+              className="w-[10rem] h-[2.5rem]"
             />
           </div>
         </div>

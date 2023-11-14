@@ -77,7 +77,7 @@ const Page = () => {
             Temporary Accounts
           </p>
           <Button
-            name={x > 270 ? "Create Account" : ""}
+            name={x > 600 ? "Create Account" : ""}
             icon={<AiOutlinePlus />}
             varient="filled"
             states={loading ? "loading" : undefined}
@@ -86,7 +86,7 @@ const Page = () => {
               check_email && Number(amount) > 0 && !loading ? false : true
             }
             onClick={create_subaccount}
-            className="py-1 px-2"
+            className="px-3 py-1 md:py-2"
           />
         </div>
         <div className="flex mt-3 flex-col gap-2">

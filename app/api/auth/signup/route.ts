@@ -176,7 +176,7 @@ export const POST = async (req: Request) => {
 
     const user: userProps<beneficiariesProps> = {
       _id: new mongoose.Types.ObjectId(),
-      email: email,
+      email: email.trim().toLowerCase(),
       emailVerified: true,
       suspisiousLogin: false,
       username: firstname.toLowerCase(),
@@ -352,7 +352,7 @@ export const POST = async (req: Request) => {
     // Create user object
     const user: userProps<beneficiariesProps> = {
       _id: new mongoose.Types.ObjectId(),
-      email: email,
+      email: email.trim().toLowerCase(),
       emailVerified: false,
       suspisiousLogin: false,
       username: firstname.toLowerCase(),

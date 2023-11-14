@@ -1,4 +1,4 @@
-import React, { SetStateAction, useEffect, useRef, useState } from "react";
+import React, { SetStateAction, useEffect, useState } from "react";
 import SheetComp from "../sheet";
 import { IoIosArrowForward } from "react-icons/io";
 import { AiOutlineClose } from "react-icons/ai";
@@ -51,7 +51,7 @@ const SelectBank = ({
   const [q, setQ] = useState("");
 
   const { error, data, is_loading } = useFetchData<bankResProps[]>({
-    url: "http://localhost:8000/api/flutterwave/get-all-banks",
+    url: `${process.env.NEXT_PUBLIC_URL}/api/flutterwave/get-all-banks`,
     retry: true,
     interval: 10000,
   });

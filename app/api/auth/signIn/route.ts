@@ -1,6 +1,5 @@
 import { login_attempt_email, login_detect_email } from "@/Emails/email";
 import {
-  currentTime,
   disableAcct,
   get_ipAddress,
   hashText,
@@ -95,8 +94,8 @@ export const POST = async (req: Request) => {
   try {
     // Find the user by email or phone number
     const user: userProps<beneficiariesProps> | null =
-      (await findUserByEmail(loginID as string)) ||
-      (await findUserByPhoneNumber(String(loginID)));
+      (await findUserByEmail(String(loginID).trim().toLowerCase())) ||
+      (await findUserByPhoneNumber(String(loginID).trim().toLowerCase()));
 
     //If the !USER is not true return NOT-FOUND --> 404
     if (!user) {

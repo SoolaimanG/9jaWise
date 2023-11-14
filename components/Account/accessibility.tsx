@@ -48,7 +48,7 @@ const Accessibility = () => {
             borderRadius={true}
             varient="filled"
             onClick={() => setQuickAction("deposit")}
-            name={x > 290 ? "Deposit" : ""}
+            name={x > 600 ? "Deposit" : ""}
             disabled={false}
           />
           <Button
@@ -57,7 +57,7 @@ const Accessibility = () => {
             borderRadius={true}
             varient="danger"
             onClick={() => setQuickAction("send")}
-            name={x > 290 ? "Send" : ""}
+            name={x > 600 ? "Send" : ""}
             disabled={false}
           />
           <Button
@@ -66,7 +66,7 @@ const Accessibility = () => {
             borderRadius={true}
             varient="warning"
             onClick={() => setQuickAction("more")}
-            name={x > 290 ? "More" : ""}
+            name={x > 600 ? "More" : ""}
             disabled={false}
           />
         </FadeIn>
