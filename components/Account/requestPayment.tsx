@@ -8,6 +8,7 @@ import SlideIn from "../Animations/slideIn";
 import FadeIn from "../Animations/fadeIn";
 import { useStore } from "@/provider";
 import { toast } from "../ui/use-toast";
+import { addStatusMessage } from "./data";
 
 const containerVariant = {
   hidden: { opacity: 0, y: -100 },
@@ -46,7 +47,7 @@ const RequestPayment = () => {
       setLoading(false);
       toast({
         title: `ERROR ${res.status}`,
-        description: res.statusText,
+        description: addStatusMessage(res.status as 400),
         variant: "destructive",
       });
       return;
@@ -55,7 +56,7 @@ const RequestPayment = () => {
     setLoading(false);
     toast({
       title: `SUCCESS`,
-      description: res.statusText,
+      description: addStatusMessage(res.status as 200),
     });
     try_refresh();
   };

@@ -32,7 +32,7 @@ const Internet = () => {
   const [card_number, setCard_number] = useState<string | number>("");
 
   const { is_loading, data, error } = useFetchData<tvProps[]>({
-    url: "http://localhost:8000/api/flutterwave/get-bill-categories",
+    url: `${process.env.NEXT_PUBLIC_URL}/api/flutterwave/get-bill-categories`,
     retry: true,
     interval: 3000,
   });

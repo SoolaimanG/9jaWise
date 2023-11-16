@@ -58,6 +58,7 @@ const StageTwo: React.FC<stageTwoProps> = ({
   loginMode,
   accountState,
 }) => {
+  const [loading, setLoading] = useState(false);
   //---->States use to verify strength of password for users<-----
   const [validPassword, setValidPassword] = useState({
     strength: 0,
@@ -193,6 +194,8 @@ const StageTwo: React.FC<stageTwoProps> = ({
       }
     />
   );
+
+  console.log(loading);
 
   return (
     <div className="mt-3 w-full">
@@ -330,24 +333,26 @@ const StageTwo: React.FC<stageTwoProps> = ({
             varient="filled"
             borderRadius={true}
             onClick={() => setState("first")}
-            className="px-3 h-[2.5rem]"
+            className="w-[20%] h-[2.5rem]"
           />
           <Button
             name="Create Account"
             disabled={
-              authType === "password"
-                ? password && password === confirmPassword && acceptCondition
-                  ? false
-                  : true
-                : acceptCondition && otp
+              ((password && password === confirmPassword) || otp) &&
+              acceptCondition &&
+              !loading
                 ? false
                 : true
             }
             borderRadius={true}
             varient="filled"
-            onClick={() => createAccount(confirmPassword as string)}
+            onClick={async () => {
+              setLoading(true);
+              await createAccount(confirmPassword as string);
+              setLoading(false);
+            }}
             states={accountState === "loading" ? "loading" : undefined}
-            className="px-3 h-[2.5rem]"
+            className="w-[30%] md:w-[40%] h-[2.5rem]"
           />
         </div>
         {/* Can be place any where */}

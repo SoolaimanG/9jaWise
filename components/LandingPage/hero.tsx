@@ -141,7 +141,7 @@ const Hero = () => {
                 name="Get Started"
                 varient="filled"
                 disabled={check_email && email ? false : true}
-                className="w-[25%] h-[2.5rem] sm:w-[40%] md:w-[30%] sm:text-[0.9rem]"
+                className="w-[25%] h-[2.5rem] sm:w-[40%] md:w-[40%] sm:text-[0.9rem]"
                 borderRadius={true}
                 onClick={() => {
                   check_email

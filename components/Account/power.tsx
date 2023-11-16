@@ -49,7 +49,7 @@ const Power = () => {
   const [otp_or_password, setOtp_or_password] = useState<string | number>("");
 
   const { is_loading, data, error } = useFetchData<billerTypes[]>({
-    url: "http://localhost:8000/api/flutterwave/get-bill-categories",
+    url: `${process.env.NEXT_PUBLIC_URL}/api/flutterwave/get-bill-categories`,
     retry: true,
     interval: 3000,
   });

@@ -29,8 +29,10 @@ const Deposit = ({
   const [loading, setLoading] = useState(false);
   const [amount, setAmount] = useState<string | number>(0);
 
+  //console.log(process.env.NEXT_PUBLIC_FLW_SECRET_KEY);
+
   const handleFlutterPayment = useFlutterwave({
-    public_key: process.env.FLW_SECRET_KEY!,
+    public_key: process.env.NEXT_PUBLIC_FLW_PUBLIC_KEY!,
     tx_ref: String(Date.now()),
     amount: amount as number,
     customer: {

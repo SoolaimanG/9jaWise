@@ -7,11 +7,6 @@ import VerificationIncomplete from "@/components/Account/verificationIncomplete"
 import Chart from "@/components/chart";
 import { useStore } from "@/provider";
 
-interface Transaction {
-  date: string; // Assuming date is a string in the format 'YYYY-MM-DD'
-  // Other properties of the transaction
-}
-
 //Ref to https://openai.chat.com -->Generate this to tell the week
 const getWeekNumber = (d: Date): number => {
   d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));

@@ -18,15 +18,18 @@ const DarkMode = (props: darkModeProps) => {
   const { color, position, hide_name } = props;
 
   // First check if the window properties are available
-  const checkExistance = typeof window !== "undefined"; // Using this because of the nature of NEXTJS (window not defined)
+  const checkExistance = typeof window !== "undefined"; // Check if the window object exists
+
+  // Check if the theme is stored in localStorage
+  const storedTheme = checkExistance ? localStorage.getItem("theme") : null;
+
+  // Set the initial mode based on storedTheme or default to "dark"
+  const initialMode = storedTheme || (checkExistance ? "dark" : "light");
+
   const [mode, setMode] = useState<"dark" | "light">(
-    //@ts-ignore
-    checkExistance && localStorage.getItem("theme")
-      ? localStorage.getItem("theme") || "light"
-      : checkExistance
-      ? localStorage.getItem("theme")
-      : "light"
+    initialMode as "dark" | "light"
   );
+
   const { setIs_darkmode, is_darkmode } = useStore(); // Zustand State Management
 
   const handleClick = () => {

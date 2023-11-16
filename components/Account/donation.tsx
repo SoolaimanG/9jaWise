@@ -17,6 +17,7 @@ import { useStore } from "@/provider";
 import { useToast } from "../ui/use-toast";
 import FadeIn from "../Animations/fadeIn";
 import Donation_content from "./donation_content";
+import { addStatusMessage } from "./data";
 
 const Donation = () => {
   //----------->States needs to created a donation<------------
@@ -51,6 +52,7 @@ const Donation = () => {
       return toast({
         title: `ERROR 400`,
         description: "Verify your email and try again",
+        variant: "destructive",
       });
     }
 
@@ -58,7 +60,8 @@ const Donation = () => {
     if (user?.account.accountNumber) {
       return toast({
         title: `ERROR 400`,
-        description: "Complete KYC and try again",
+        description: "KYC already completed",
+        variant: "destructive",
       });
     }
 
@@ -83,7 +86,7 @@ const Donation = () => {
       setLoading(false);
       toast({
         title: `ERROR ${res.status}`,
-        description: res.statusText,
+        description: addStatusMessage(res.status as 400),
         variant: "destructive",
       });
       return;

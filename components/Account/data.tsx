@@ -13,6 +13,23 @@ import { toast } from "../ui/use-toast";
 //Networks Available
 const networkType = ["MTN", "AIRTEL", "GLO", "9MOBILE"];
 
+export const addStatusMessage = (
+  status: 200 | 401 | 403 | 409 | 429 | 404 | 400 | 500
+) => {
+  const status_message = {
+    200: "This operation was successful",
+    401: "Unauthorized access please login",
+    403: "You are forbidden from this operation",
+    409: "Client Conflict",
+    429: "Too many request please try again later",
+    404: "This is missing in the database",
+    400: "This is a bad request",
+    500: "Internal Server Error",
+  };
+
+  return status_message[status];
+};
+
 export type billerProps = {
   biller_code: string;
   name: string;

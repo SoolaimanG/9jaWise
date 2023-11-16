@@ -14,6 +14,7 @@ import { toast } from "@/components/ui/use-toast";
 import { useStore } from "@/provider";
 import React, { useState } from "react";
 import { AiOutlinePlus } from "react-icons/ai";
+import { addStatusMessage } from "@/components/Account/data";
 
 const Page = () => {
   //------------>States needed to create a new subaccount<---------
@@ -48,7 +49,7 @@ const Page = () => {
       setLoading(false);
       toast({
         title: `ERROR ${res.status}`,
-        description: res.statusText,
+        description: addStatusMessage(res.status as 400),
         variant: "destructive",
       });
       return;
@@ -60,7 +61,7 @@ const Page = () => {
     setLoading(false);
     toast({
       title: "SUCCESS",
-      description: res.statusText,
+      description: addStatusMessage(200),
     });
     try_refresh(); //Hard refresh here
   };

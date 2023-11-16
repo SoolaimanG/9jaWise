@@ -3,7 +3,6 @@
 import { AiOutlinePlus, AiOutlineWifi } from "react-icons/ai";
 import { IoMdCall } from "react-icons/io";
 import { MdCable, MdOutlineElectricBolt } from "react-icons/md";
-import { TbMobiledata } from "react-icons/tb";
 import { motion } from "framer-motion";
 import SheetComp from "../sheet";
 import { useStore } from "@/provider";
@@ -23,16 +22,16 @@ const billCategory = [
     category: "airtime",
   },
   {
-    icon: <TbMobiledata />,
-    category: "data bundle",
+    icon: <AiOutlineWifi />,
+    category: "data",
   },
   {
     icon: <MdOutlineElectricBolt />,
     category: "power",
   },
   {
-    icon: <AiOutlineWifi />,
-    category: "internet",
+    icon: <MdCable />,
+    category: "cable",
   },
   {
     icon: <IoBookmarksOutline />,
@@ -101,7 +100,7 @@ const More = () => {
               <div className="w-full p-2">
                 {type.category === "airtime" && <Airtime />}
                 {type.category === "data bundle" && <Data />}
-                {type.category === "internet" && <Internet />}
+                {type.category === "cable" && <Internet />}
                 {type.category === "saving" && <Saving />}
                 {type.category === "invite" && <Invite />}
                 {type.category === "power" && <Power />}

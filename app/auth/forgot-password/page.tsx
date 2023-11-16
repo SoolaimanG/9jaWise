@@ -1,5 +1,6 @@
 "use client";
 
+import { addStatusMessage } from "@/components/Account/data";
 import SlideFromBelow from "@/components/Animations/slideFromBelow";
 import SlideIn from "@/components/Animations/slideIn";
 import Button from "@/components/button";
@@ -17,25 +18,29 @@ const Page = () => {
 
   const requestChange = async () => {
     setLoading(true);
-    const res = await fetch("/api/auth/forget-password", {
-      method: "POST",
-      body: JSON.stringify({ loginID: loginID }),
-    });
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_URL}/api/auth/forget-password`,
+      {
+        method: "POST",
+        body: JSON.stringify({ loginID: loginID }),
+      }
+    );
 
     if (!res.ok) {
       setLoading(false);
       toast({
         title: "Error",
-        description: res.statusText,
+        description: res.statusText || addStatusMessage(res.status as 400),
         variant: "destructive",
       });
       return;
     }
 
+    setLoginID("");
     setLoading(false);
     toast({
       title: "Success",
-      description: res.statusText,
+      description: res.statusText || addStatusMessage(200),
     });
   };
 

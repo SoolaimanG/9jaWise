@@ -12,6 +12,7 @@ import {
   userProps,
 } from "@/Models/user";
 import mongoose from "mongoose";
+import { HTTP_STATUS } from "../../donation/withdraw/route";
 
 // Define the structure of sign-up data
 export type signUpProps = {
@@ -189,7 +190,7 @@ export const POST = async (req: Request) => {
       history: [],
       beneficiaries: [],
       ip_address: "",
-      occupation: occupation.toLowerCase(),
+      occupation: occupation?.toLowerCase(),
       acceptTermsAndConditions: acceptTermsAndConditions,
       balance: 0,
       loginMode: loginType,
@@ -280,14 +281,14 @@ export const POST = async (req: Request) => {
       });
       //await closeConnection();
       return new Response(null, {
-        status: 200,
+        status: HTTP_STATUS.OK,
         statusText: "Account created successfully",
       });
     } catch (error) {
       console.log(error);
       await closeConnection();
       return new Response(null, {
-        status: 500,
+        status: HTTP_STATUS.SERVER_ERROR,
         statusText: "Server error",
       });
     }
@@ -365,7 +366,7 @@ export const POST = async (req: Request) => {
       history: [],
       beneficiaries: [],
       ip_address: "",
-      occupation: occupation.toLowerCase(),
+      occupation: occupation?.toLowerCase(),
       acceptTermsAndConditions: acceptTermsAndConditions,
       balance: 0,
       loginMode: loginType,

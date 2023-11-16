@@ -1,5 +1,5 @@
 import { reset_password_email } from "@/Emails/email";
-import { sendEmail } from "@/Functions/TS";
+import { sendEmail, user_with_password } from "@/Functions/TS";
 import { closeConnection, connectDatabase } from "@/Models";
 import { changePassword, changePasswordSchema } from "@/Models/changePassword";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/Models/user";
 import mongoose from "mongoose";
 import { HTTP_STATUS } from "../../donation/withdraw/route";
+import { useActiveModifiers } from "react-day-picker";
 
 export const POST = async (req: Request) => {
   const { loginID }: { loginID: string } = await req.json();
@@ -48,8 +49,7 @@ export const POST = async (req: Request) => {
     await closeConnection();
     return new Response(null, {
       status: HTTP_STATUS.BAD,
-      statusText:
-        "Cannot send login link to Phone Number at the moment (Please contact support Soolaimangee@gmail.com)",
+      statusText: "Cannot send login link to Phone Number at the moment",
     });
   }
 
@@ -57,13 +57,15 @@ export const POST = async (req: Request) => {
     await closeConnection();
     return new Response(null, {
       status: HTTP_STATUS.CONFLICT,
-      statusText: "Conflict this is not your authentication flow",
+      statusText: "You do not use password for auth",
     });
   }
 
+  const user_password = await user_with_password(user._id.toString(), "email");
+
   const updates: userProps<beneficiariesProps> | {} = {
     authentication: {
-      ...user.authentication,
+      ...user_password.authentication,
       request_password_reset: true,
     },
     logs: {
@@ -78,7 +80,7 @@ export const POST = async (req: Request) => {
     `${process.env.NEXTAUTH_URL}/auth/change-password/${_ID.toString()}`
   );
 
-  const expiry_time = 15 * 60 + Date.now();
+  const expiry_time = Date.now() + 15 * 60 * 1000; // 15 minutes in milliseconds
 
   const changePassword = new changePasswordSchema<changePassword>({
     _id: _ID,

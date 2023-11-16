@@ -35,7 +35,7 @@ export const POST = async (req: Request) => {
     });
   }
 
-  if (password !== confirmPassword) {
+  if (password.trim() !== confirmPassword.trim()) {
     return new Response(null, {
       status: HTTP_STATUS.CONFLICT,
       statusText: "Passwords do not match",
@@ -59,11 +59,21 @@ export const POST = async (req: Request) => {
 
     const current_time = Date.now();
 
-    if (password_change.expireOn < current_time) {
+    if (password_change.status === "changed") {
+      await closeConnection();
+      return new Response(null, {
+        statusText: "Password has been changed already",
+        status: HTTP_STATUS.CONFLICT,
+      });
+    }
+
+    console.log(password_change);
+
+    if (current_time > password_change.expireOn) {
       await closeConnection();
       return new Response(null, {
         status: HTTP_STATUS.BAD,
-        statusText: "Please request a new password change (TOKEN has expired).",
+        statusText: "Request new token (TOKEN has expired).",
       });
     }
 
@@ -79,7 +89,12 @@ export const POST = async (req: Request) => {
       });
     }
 
-    if (user.suspisiousLogin) {
+    const {
+      suspisiousLogin,
+      authentication: { request_password_reset, salt },
+    } = user;
+
+    if (suspisiousLogin) {
       await closeConnection();
 
       return new Response(null, {
@@ -88,26 +103,28 @@ export const POST = async (req: Request) => {
       });
     }
 
-    if (!user?.authentication.request_password_reset) {
+    if (!request_password_reset) {
       await closeConnection();
 
       return new Response(null, {
         status: HTTP_STATUS.CONFLICT,
-        statusText: "Something went wrong (Conflict with request)",
+        statusText: "User did not request password reset",
       });
     }
 
     const user_with_password: userProps<beneficiariesProps> =
       await findUserByEmail_Password(user.email!);
 
-    const hashPassword = hashText(user.authentication.salt, password);
+    const hashPassword = hashText(
+      user_with_password.authentication.salt,
+      password.trim()
+    );
 
     if (hashPassword === user_with_password.authentication.previous_password) {
       await closeConnection();
       return new Response(null, {
         status: HTTP_STATUS.CONFLICT,
-        statusText:
-          "This password is similar to your a previous password you have used before (Please try another password)",
+        statusText: "Something went wrong (Use different password)",
       });
     }
 
@@ -120,9 +137,9 @@ export const POST = async (req: Request) => {
     const updates: userProps<beneficiariesProps> | {} = {
       authentication: {
         request_password_reset: false,
-        previous_password: user.authentication.password,
+        previous_password: user_with_password.authentication.password,
         password: hashPassword,
-        salt: user.authentication.salt,
+        salt: user_with_password.authentication.salt,
       },
       logs: {
         ...user.logs,
@@ -131,17 +148,26 @@ export const POST = async (req: Request) => {
       notifications: [...user.notifications, new_notification],
     };
 
+    const password_update: changePassword | {} = {
+      status: "changed",
+    };
+
     const email_template = "";
 
     await closeConnection();
-    await Promise.all([
-      UserModel.findByIdAndUpdate(password_change.user_id, updates),
-      sendEmail({
-        emailSubject: "Your password has been changed",
-        emailTemplate: email_template,
-        emailTo: user.email as string,
-      }),
-    ]);
+    await UserModel.findByIdAndUpdate(password_change.user_id, updates).then(
+      async () => {
+        changePasswordSchema.findByIdAndUpdate(
+          password_change._id,
+          password_update
+        );
+        sendEmail({
+          emailSubject: "Your password has been changed",
+          emailTemplate: email_template,
+          emailTo: user.email as string,
+        });
+      }
+    );
 
     await closeConnection();
     return new Response(null, {
