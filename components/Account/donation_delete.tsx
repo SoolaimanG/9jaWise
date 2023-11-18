@@ -7,7 +7,7 @@ import { toast } from "../ui/use-toast";
 import { useStore } from "@/provider";
 
 const Donation_delete = ({ id }: { id: string }) => {
-  const [loading, setLoading] = useState(false); //Tract request
+  const [loading, setLoading] = useState(false); //Track request
 
   const { try_refresh } = useStore(); //Perform hard request
 

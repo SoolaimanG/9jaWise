@@ -6,7 +6,7 @@ import { Checkbox } from "../ui/checkbox";
 import { toast } from "../ui/use-toast";
 import { DialogDescription, DialogTitle } from "../ui/dialog";
 import { DialogAlert } from "../dialogAlert";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export type stageTwoProps = {
   authType: "otp" | "password";
@@ -195,8 +195,6 @@ const StageTwo: React.FC<stageTwoProps> = ({
     />
   );
 
-  console.log(loading);
-
   return (
     <div className="mt-3 w-full">
       <div className="w-full flex flex-col gap-2">
@@ -352,7 +350,7 @@ const StageTwo: React.FC<stageTwoProps> = ({
               setLoading(false);
             }}
             states={accountState === "loading" ? "loading" : undefined}
-            className="w-[30%] md:w-[40%] h-[2.5rem]"
+            className="w-[40%] px-2 md:w-[50%] sm:w-[50%] h-[2.5rem]"
           />
         </div>
         {/* Can be place any where */}

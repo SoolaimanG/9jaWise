@@ -24,7 +24,7 @@ const DarkMode = (props: darkModeProps) => {
   const storedTheme = checkExistance ? localStorage.getItem("theme") : null;
 
   // Set the initial mode based on storedTheme or default to "dark"
-  const initialMode = storedTheme || (checkExistance ? "dark" : "light");
+  const initialMode = storedTheme || (checkExistance ? "light" : "dark");
 
   const [mode, setMode] = useState<"dark" | "light">(
     initialMode as "dark" | "light"

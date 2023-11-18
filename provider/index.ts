@@ -1,3 +1,4 @@
+import { donationProps } from "@/Models/donation";
 import { beneficiariesProps, userProps } from "@/Models/user";
 import { responseProps } from "@/components/Bot/response";
 import mongoose from "mongoose";
@@ -8,26 +9,7 @@ type conversationProps = {
   user: string | null;
   chatBot: responseProps | null;
 };
-export interface donationProps {
-  id: string;
-  donation_name: string;
-  description: string;
-  date: Date;
-  target_amount: number;
-  amount_raised: number;
-  donation_link: string;
-  created_by: string;
-  donators: {
-    name: string;
-    amount: number;
-    date: Date;
-  }[];
-  donation_account: {
-    account_number: string;
-    account_name: string;
-    bank_name: string;
-  };
-}
+
 export type savingProps = {
   _id: mongoose.Types.ObjectId | string;
   icon_name: string;

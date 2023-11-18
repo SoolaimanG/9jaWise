@@ -13,6 +13,7 @@ import { AccountModel } from "@/Models/accountNumbers";
 import { sendEmail } from "@/Functions/TS";
 import { delete_campaign_email } from "@/Emails/email";
 import { HTTP_STATUS } from "../withdraw/route";
+import { DonationModel, donationProps } from "@/Models/donation";
 
 // DELETE Donation Campaign API
 export const DELETE = async (req: Request) => {
@@ -82,10 +83,10 @@ export const DELETE = async (req: Request) => {
     }
 
     // Find the target donation campaign by ID
-    const target_donation = donation_campaigns.find((d) => d.id === id);
+    const donation: donationProps | null = await DonationModel.findById(id);
 
     // Check if the target donation is not found and return a 404 response
-    if (!target_donation) {
+    if (!donation) {
       await closeConnection();
       return new Response(null, {
         status: HTTP_STATUS.NOT_FOUND,
@@ -93,14 +94,17 @@ export const DELETE = async (req: Request) => {
       });
     }
 
-    // Remove the target donation from the user's donation campaigns
-    const remove_donation = donation_campaigns.filter((d) => d.id !== id);
+    const {
+      donation_name,
+      amount_raised,
+      donation_account: { account_number },
+    } = donation;
 
     // Create a new notification about the campaign deletion
     const new_notifications: notificationsProps = {
       time: Date.now(),
       type: "info",
-      message: `Your donation campaign with the name ${target_donation.donation_name} has been deleted`,
+      message: `Your donation campaign with the name ${donation_name} has been deleted`,
     };
 
     // Create an email template for notification
@@ -108,16 +112,16 @@ export const DELETE = async (req: Request) => {
 
     // Define updates for the user's properties
     const updates: userProps<beneficiariesProps> | {} = {
-      balance: balance + target_donation.amount_raised,
-      donation_campaigns: remove_donation,
+      balance: balance + amount_raised,
       notifications: [...user.notifications, new_notifications],
     };
 
     await Promise.all([
       UserModel.findByIdAndUpdate(user._id, updates),
       AccountModel.findOneAndDelete({
-        account_number: target_donation.donation_account.account_number,
+        account_number: account_number,
       }),
+      DonationModel.findByIdAndDelete(id),
       sendEmail({
         emailSubject: "Donation Campaign Deleted",
         emailTemplate: email_template,
@@ -137,7 +141,7 @@ export const DELETE = async (req: Request) => {
     console.log(error);
     await closeConnection();
 
-    // Return a 500 response for internal server error
+    //Return a 500 response for internal server error
     return new Response(null, {
       status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Internal Server Error",

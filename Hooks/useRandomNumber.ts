@@ -26,7 +26,7 @@ export const useRandomNumber = (
           let random;
           do {
             // Generate a random number until it's not equal to the excluded number
-            random = Math.floor(Math.random() * 100);
+            random = Math.floor(Math.random() * Number(within) || 100);
           } while (random === neverToGenerate);
           setNumber(random);
         }

@@ -10,14 +10,12 @@ import {
   userProps,
 } from "@/Models/user";
 import { closeConnection, connectDatabase } from "@/Models";
-import {
-  hashText,
-  random,
-  sendEmail,
-  user_with_password,
-} from "@/Functions/TS";
+import { hashText, sendEmail, user_with_password } from "@/Functions/TS";
 import { transaction_alert_email } from "@/Emails/email";
+import { DonationModel, donationProps } from "@/Models/donation";
+import { v4 as uuidv4 } from "uuid";
 
+// Enum for HTTP status codes
 export enum HTTP_STATUS {
   OK = 200,
   BAD = 400,
@@ -29,7 +27,9 @@ export enum HTTP_STATUS {
   SERVER_ERROR = 500,
 }
 
+// PATCH method for handling donation withdrawals
 export const PATCH = async (req: Request) => {
+  // Destructure request payload
   const {
     withdraw_amount,
     donation_id,
@@ -37,6 +37,7 @@ export const PATCH = async (req: Request) => {
   }: { withdraw_amount: number; donation_id: string; password_or_otp: string } =
     await req.json();
 
+  // Check for missing donation ID
   if (!donation_id) {
     return new Response(null, {
       status: HTTP_STATUS.NOT_FOUND,
@@ -44,6 +45,7 @@ export const PATCH = async (req: Request) => {
     });
   }
 
+  // Check for invalid or non-positive withdrawal amount
   if (isNaN(Number(withdraw_amount)) && withdraw_amount <= 0) {
     return new Response(null, {
       statusText: "Something went wrong",
@@ -51,17 +53,21 @@ export const PATCH = async (req: Request) => {
     });
   }
 
+  // Ensure a positive amount is used for withdrawal
   const amount = Math.abs(withdraw_amount);
 
+  // Check for missing amount
   if (!amount) {
     return new Response(null, {
       status: HTTP_STATUS.BAD,
-      statusText: "Missing Parameters (Donation ID)",
+      statusText: "Missing Parameters (Amount)",
     });
   }
 
+  // Get the user session using NextAuth
   const session = await getServerSession(authOptions);
 
+  // Check for an active user session
   if (!session?.user) {
     return new Response(null, {
       status: HTTP_STATUS.UNAUTHORIZED,
@@ -69,15 +75,19 @@ export const PATCH = async (req: Request) => {
     });
   }
 
+  // Extract user email from the session
   const { email } = session.user;
 
+  // Connect to the database
   await connectDatabase();
 
   try {
+    // Find the user by email or phone number
     const user: userProps<beneficiariesProps> | null =
       (await findUserByEmail(email as string)) ||
       (await findUserByPhoneNumber(email as string));
 
+    // Check if user exists
     if (!user) {
       await closeConnection();
       return new Response(null, {
@@ -86,20 +96,22 @@ export const PATCH = async (req: Request) => {
       });
     }
 
+    // Destructure user properties
     const {
       suspisiousLogin,
       disableAccount,
-      donation_campaigns,
       balance,
-      _id: { id },
+      _id,
       settings: { send_otp_for_each_transaction },
       logs: { totalEmailSent },
       loginMode,
       loginType,
       notifications,
       history,
+      account: { accountNumber },
     } = user;
 
+    // Check for suspicious login
     if (suspisiousLogin) {
       await closeConnection();
       return new Response(null, {
@@ -108,6 +120,7 @@ export const PATCH = async (req: Request) => {
       });
     }
 
+    // Check if the account is disabled
     if (disableAccount) {
       await closeConnection();
       return new Response(null, {
@@ -116,13 +129,15 @@ export const PATCH = async (req: Request) => {
       });
     }
 
+    // Handle OTP verification or password check based on user settings
     if (send_otp_for_each_transaction) {
       if (loginMode === "email" && loginType === "otp") {
-        //
+        // Perform OTP verification via an API request
         const res = await fetch(
           `${process.env.NEXTAUTH_URL}/api/auth/requestOTP?otp=${password_or_otp}&email=${user.email}`
         );
 
+        // Check if OTP verification is successful
         if (!res.ok) {
           return new Response(null, {
             status: res.status,
@@ -131,11 +146,11 @@ export const PATCH = async (req: Request) => {
         }
       }
 
+      // Password check for loginType "password"
       if (loginType === "password") {
-        //
         const user_password = await user_with_password(
-          id.toString(),
-          user.loginMode === "email" ? "email" : "phone_number"
+          _id.toString(),
+          user.loginMode === "email" ? "email" : "phoneNumber"
         );
 
         const hash_password = hashText(user_password.authentication.salt, "");
@@ -148,8 +163,8 @@ export const PATCH = async (req: Request) => {
         }
       }
 
+      // Conflict for loginMode "phoneNumber" and loginType "otp"
       if (loginMode === "phoneNumber" && loginType === "otp") {
-        //
         return new Response(null, {
           status: HTTP_STATUS.CONFLICT,
           statusText: "Cannot send OTP to phone number right now",
@@ -157,18 +172,24 @@ export const PATCH = async (req: Request) => {
       }
     }
 
-    const find_donation = donation_campaigns.find((donation) => {
-      return donation.id === donation_id;
-    });
+    // Find the donation by ID
+    const donation: donationProps | null = await DonationModel.findById(
+      donation_id
+    );
 
-    if (!find_donation) {
+    // Check if the donation exists
+    if (!donation) {
       return new Response(null, {
         status: HTTP_STATUS.NOT_FOUND,
         statusText: "Donation not found",
       });
     }
 
-    if (find_donation.amount_raised < amount) {
+    // Destructure donation properties
+    const { amount_raised } = donation;
+
+    // Check if the withdrawal amount is greater than the available amount in the donation
+    if (amount_raised < amount) {
       await closeConnection();
       return new Response(null, {
         status: HTTP_STATUS.CONFLICT,
@@ -176,20 +197,19 @@ export const PATCH = async (req: Request) => {
       });
     }
 
-    const new_donation_campaign = donation_campaigns.map((donation) => {
-      return donation.id === donation_id
-        ? { ...donation, amount_raised: donation.amount_raised - amount }
-        : { ...donation };
-    });
+    // Update donation and user information after successful withdrawal
+    const donation_update: donationProps | {} = {
+      amount_raised: amount_raised - amount,
+    };
 
     const new_notification: notificationsProps = {
       time: Date.now(),
       type: "credit",
       amount: amount,
-      header: "Payment recieved from donation",
+      header: "Payment received from donation",
     };
 
-    const transaction_ref = random(25);
+    const transaction_ref = uuidv4();
 
     const new_history: historyProps = {
       type: "credit",
@@ -200,18 +220,19 @@ export const PATCH = async (req: Request) => {
       name: user.username,
     };
 
+    // Email template for credit alert
     const credit_alert_email = transaction_alert_email({
       username: user.username,
       transaction_id: transaction_ref,
-      account_number: String(user.account.accountNumber),
+      account_number: String(accountNumber),
       amount: amount,
       date: new Date(),
       type: "credit",
     });
 
+    // Updates for the user document
     const updates: userProps<beneficiariesProps> | {} = {
       balance: balance + amount,
-      donation_campaigns: new_donation_campaign,
       logs: {
         ...user.logs,
         totalEmailSent: totalEmailSent + 1,
@@ -224,23 +245,29 @@ export const PATCH = async (req: Request) => {
       history: [...history, new_history],
     };
 
-    await UserModel.findByIdAndUpdate(user._id, updates).then(async () => {
-      await sendEmail({
+    // Perform atomic updates using Promise.all
+    await Promise.all([
+      UserModel.findByIdAndUpdate(user._id, updates),
+      DonationModel.findByIdAndUpdate(donation_id, donation_update),
+    ]).then(() => {
+      // Send credit alert email
+      sendEmail({
         emailSubject: "Credit Alert",
         emailTemplate: credit_alert_email,
         emailTo: user.email as string,
       });
     });
 
+    // Close the database connection and return success response
     await closeConnection();
     return new Response(null, {
       status: HTTP_STATUS.OK,
       statusText: "Amount withdrawn successfully",
     });
   } catch (error) {
+    // Handle errors, log, close the connection, and return a server error response
     console.log(error);
     await closeConnection();
-
     return new Response(null, {
       status: HTTP_STATUS.SERVER_ERROR,
       statusText: "Internal Server Error",

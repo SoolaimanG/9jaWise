@@ -57,7 +57,7 @@ const Donation = () => {
     }
 
     //Checking if the user has an account number already assign to him/her if not do not allow
-    if (user?.account.accountNumber) {
+    if (!user?.account.accountNumber) {
       return toast({
         title: `ERROR 400`,
         description: "KYC already completed",

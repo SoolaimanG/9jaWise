@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import Donation_withdraw from "./donation_withdraw";
 import Donation_delete from "./donation_delete";
 import ProgressComp from "../progress";
@@ -6,22 +8,56 @@ import { FaRegMoneyBillAlt } from "react-icons/fa";
 import { SheetClose } from "../ui/sheet";
 import { CgArrowLongLeft } from "react-icons/cg";
 import SheetComp from "../sheet";
-import { useNairaFormatter } from "@/Hooks/useNairaFormatter";
 import EmptyState from "./emptyState";
 import { useStore } from "@/provider";
 import Donation_edit from "./donation_edit";
+import { donationProps } from "@/Models/donation";
+import { toast } from "../ui/use-toast";
+import { addStatusMessage } from "./data";
 
 const Donation_content = () => {
-  const { is_darkmode, user } = useStore(); //Are we on dark mode? or user properties
+  const { is_darkmode, user, refresh_count } = useStore(); //Are we on dark mode? or user properties
+
+  const [state, setState] = useState<{ loading: false; data: donationProps[] }>(
+    {
+      loading: false,
+      data: [],
+    }
+  );
+
+  useEffect(() => {
+    const get_donation = async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_URL}/api/GETS/donation/all`,
+        {
+          next: { revalidate: 5 },
+        }
+      );
+
+      if (!res.ok) {
+        toast({
+          title: `ERROR ${res.status}`,
+          description: res.statusText || addStatusMessage(res.status as 400),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const donations: { donations: donationProps[] } = await res.json();
+
+      setState({ ...state, data: donations.donations });
+    };
+
+    user && get_donation();
+  }, [user, refresh_count]);
 
   return (
     <div className="w-full mt-5">
-      {(user?.donation_campaigns.length as number) <= 0 ||
-      !user?.donation_campaigns ? (
+      {(state.data.length as number) <= 0 ? (
         <EmptyState message="No donation link created" />
       ) : (
         <div className="w-full cursor-pointer flex flex-col gap-5">
-          {user?.donation_campaigns.map((d) => {
+          {state.data.map((d) => {
             const n = Intl.NumberFormat("en-NG", {
               style: "currency",
               currency: "NGN",
@@ -42,7 +78,7 @@ const Donation_content = () => {
             );
             return (
               <div
-                key={d.id}
+                key={d._id.toString()}
                 className={`w-full rounded-sm flex-col gap-1 -mt-2 ${
                   is_darkmode ? "cardGlassmorphism_dark" : "bg-white"
                 } flex p-2`}
@@ -174,7 +210,7 @@ const Donation_content = () => {
                       <div className="w-full h-full flex flex-col items-end gap-2 justify-end">
                         <div className="w-full flex items-center gap-2">
                           {/* Delete donation component */}
-                          <Donation_delete id={d.id} />
+                          <Donation_delete id={d._id.toString()} />
                           {/* Withdraw the donation availabe */}
                           <Donation_withdraw donation={d} />
                         </div>

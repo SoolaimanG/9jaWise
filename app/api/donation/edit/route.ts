@@ -10,6 +10,7 @@ import {
 } from "@/Models/user";
 import { authOptions } from "../../auth/[...nextauth]/options";
 import { getServerSession } from "next-auth";
+import { DonationModel, donationProps } from "@/Models/donation";
 
 export const PATCH = async (req: Request) => {
   const {
@@ -24,21 +25,21 @@ export const PATCH = async (req: Request) => {
     id: string;
   } = await req.json();
 
-  if (!amount && isNaN(Number(amount)) && amount <= 0) {
+  if (!amount && !isNaN(Number(amount)) && amount <= 0) {
     return new Response(null, {
       status: HTTP_STATUS.BAD,
       statusText: "Something went wrong",
     });
   }
 
-  if (donation_name && donation_name.length < 3) {
+  if (!donation_name) {
     return new Response(null, {
       status: HTTP_STATUS.BAD,
       statusText: "Something went wrong",
     });
   }
 
-  if (description && description.length < 20) {
+  if (!description) {
     return new Response(null, {
       status: HTTP_STATUS.BAD,
       statusText: "Something went wrong",
@@ -71,12 +72,7 @@ export const PATCH = async (req: Request) => {
       });
     }
 
-    const {
-      suspisiousLogin,
-      disableAccount,
-      donation_campaigns,
-      notifications,
-    } = user;
+    const { suspisiousLogin, disableAccount, notifications } = user;
 
     if (suspisiousLogin) {
       await closeConnection();
@@ -94,20 +90,20 @@ export const PATCH = async (req: Request) => {
       });
     }
 
-    const find_donation = donation_campaigns.find((donation) => {
-      return donation.id === id;
-    });
+    const donation: donationProps | null = await DonationModel.findById(id);
 
-    if (!find_donation) {
+    if (!donation) {
       await closeConnection();
       return new Response(null, {
         status: HTTP_STATUS.NOT_FOUND,
-        statusText: "Donation not found",
+        statusText: "Not Found",
       });
     }
 
-    const donation_date = new Date(find_donation.date).getTime();
+    const { date } = donation;
+
     const current_time = Date.now();
+    const donation_date = new Date(date).getTime();
 
     if (current_time > donation_date) {
       await closeConnection();
@@ -117,29 +113,25 @@ export const PATCH = async (req: Request) => {
       });
     }
 
-    const new_donation = donation_campaigns.map((donation) => {
-      return donation.id === id
-        ? {
-            ...donation,
-            donation_name: donation_name || donation.donation_name,
-            description: description || donation.description,
-            target_amount: amount || donation.target_amount,
-          }
-        : { ...donation };
-    });
-
     const new_notification: notificationsProps = {
       type: "info",
       time: Date.now(),
-      message: `${find_donation.donation_name} has been edited.`,
+      message: `${donation_name} has been edited.`,
     };
-
     const updates: userProps<beneficiariesProps> | {} = {
-      donation_campaigns: new_donation,
       notifications: [...notifications, new_notification],
     };
 
-    await UserModel.findByIdAndUpdate(user._id, updates);
+    const donation_update: donationProps | {} = {
+      donation_name: donation_name,
+      description: description,
+      target_amount: amount,
+    };
+
+    await Promise.all([
+      DonationModel.findByIdAndUpdate(id, donation_update),
+      UserModel.findByIdAndUpdate(user._id, updates),
+    ]);
 
     await closeConnection();
     return new Response(null, {

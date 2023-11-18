@@ -18,6 +18,7 @@ import {
   transaction_alert_email,
 } from "@/Emails/email";
 import { v4 as uuidv4 } from "uuid";
+import { DonationModel, donationProps } from "@/Models/donation";
 
 // Define the properties required to send money
 export type send_money_props = {
@@ -250,11 +251,12 @@ export const POST = async (req: Request) => {
     // Handle the donation account case
     if (account_type === "donation") {
       // Find the user who created the donation campaign
-      const donation_creator: userProps<beneficiariesProps> | null =
-        await UserModel.findOne({ _id: ref_id });
+      const donation: donationProps | null = await DonationModel.findOne({
+        _id: ref_id,
+      });
 
       //The next three check below are to see the current compatibility of the reciver account
-      if (!donation_creator) {
+      if (!donation) {
         await closeConnection();
         return new Response(null, {
           status: HTTP_STATUS.NOT_FOUND,
@@ -262,7 +264,35 @@ export const POST = async (req: Request) => {
         });
       }
 
-      if (donation_creator.disableAccount) {
+      const {
+        user_id,
+        donators,
+        amount_raised,
+        target_amount,
+        date,
+        donation_name,
+      } = donation;
+
+      const user: userProps<beneficiariesProps> | null =
+        await UserModel.findById(user_id);
+
+      if (!user) {
+        await closeConnection();
+        return new Response(null, {
+          status: HTTP_STATUS.NOT_FOUND,
+          statusText: "User not found",
+        });
+      }
+
+      const {
+        disableAccount,
+        suspisiousLogin,
+        donation_campaigns,
+        _id,
+        email,
+      } = user;
+
+      if (disableAccount) {
         await closeConnection();
         return new Response(null, {
           status: HTTP_STATUS.BAD,
@@ -270,7 +300,7 @@ export const POST = async (req: Request) => {
         });
       }
 
-      if (donation_creator.suspisiousLogin) {
+      if (suspisiousLogin) {
         await closeConnection();
         return new Response(null, {
           status: HTTP_STATUS.BAD,
@@ -279,13 +309,11 @@ export const POST = async (req: Request) => {
       }
 
       // Find the specific donation campaign
-      const find_donation = donation_creator.donation_campaigns.find(
-        (donation) => {
-          return (
-            donation.donation_account.account_number === account_.account_number
-          );
-        }
-      );
+      const find_donation = donation_campaigns.find((donation) => {
+        return (
+          donation.donation_account.account_number === account_.account_number
+        );
+      });
 
       if (!find_donation) {
         await closeConnection();
@@ -296,7 +324,7 @@ export const POST = async (req: Request) => {
       }
 
       //If ther donation has already reach deadline
-      if (current_time > new Date(find_donation.date).getTime()) {
+      if (current_time > new Date(date).getTime()) {
         await closeConnection();
         return new Response(null, {
           status: HTTP_STATUS.FORBIDDEN,
@@ -305,7 +333,7 @@ export const POST = async (req: Request) => {
       }
 
       //If the target amount of the donation has been reached
-      if (find_donation.amount_raised >= find_donation.target_amount) {
+      if (amount_raised >= target_amount) {
         await closeConnection();
         return new Response(null, {
           status: HTTP_STATUS.CONFLICT,
@@ -327,27 +355,9 @@ export const POST = async (req: Request) => {
       };
 
       // Update the donation campaign
-      const updated_donations = donation_creator.donation_campaigns.map(
-        (donation) => {
-          return donation.donation_account.account_number ===
-            account_.account_number
-            ? {
-                ...donation,
-                amount_raised: donation.amount_raised + amount,
-                donators: [...donation.donators, new_donator],
-              }
-            : { ...donation };
-        }
-      );
-
-      const donation_updates: userProps<beneficiariesProps> | {} = {
-        donation_campaigns: updated_donations,
-        notifications: [...donation_creator.notifications, new_notifications],
-        logs: {
-          ...donation_creator.logs,
-          totalEmailSent: donation_creator.logs.totalEmailSent + 1,
-        },
-      };
+      //const donation_updates: donationProps | {} = {
+      //
+      //};
 
       //Unique ID for each transaction
       const tx_id = uuidv4();
@@ -362,19 +372,23 @@ export const POST = async (req: Request) => {
       };
 
       //Update user history
-      const user_history: historyProps = {
+      const sender_history: historyProps = {
         type: "debit",
         amount: amount,
         refID: tx_id,
         status: "complete",
         date: Date.now(),
-        name: donation_creator.username,
+        name: donation_name,
       };
 
-      const user_updates: userProps<beneficiariesProps> | {} = {
+      const sender_updates: userProps<beneficiariesProps> | {} = {
         balance: balance - amount,
-        history: [...history, user_history],
+        history: [...history, sender_history],
         notifications: [...notifications, user_notification],
+      };
+
+      const reciever_update: userProps<beneficiariesProps> | {} = {
+        notifications: [...user.notifications, new_notifications],
       };
 
       // Prepare email templates for notifications
@@ -389,17 +403,16 @@ export const POST = async (req: Request) => {
       });
 
       // Update the database with transaction details and send email notifications
-      await UserModel.findByIdAndUpdate(
-        donation_creator._id.toString(),
-        donation_updates
-      ).then(async () => {
-        await UserModel.findByIdAndUpdate(user._id.toString(), user_updates);
-        await sendEmail({
+      await Promise.all([
+        UserModel.findByIdAndUpdate(user._id.toString(), sender_updates),
+        UserModel.findByIdAndUpdate(_id, reciever_update),
+      ]).then(() => {
+        sendEmail({
           emailSubject: "Donation received",
           emailTemplate: email_template,
-          emailTo: donation_creator.email as string,
+          emailTo: email as string,
         });
-        await sendEmail({
+        sendEmail({
           emailSubject: "Debit Alert",
           emailTemplate: debit_email,
           emailTo: user.email as string,
@@ -408,7 +421,6 @@ export const POST = async (req: Request) => {
 
       // Close the database connection
       await closeConnection();
-
       return new Response(null, {
         status: HTTP_STATUS.OK,
         statusText: "Transaction Successful",

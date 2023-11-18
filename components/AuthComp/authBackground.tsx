@@ -8,10 +8,16 @@ import DebitCard from "../debitCard";
 import SlideIn from "../Animations/slideIn";
 import { useGetId } from "@/Hooks/useGetId";
 import { useStore } from "@/provider";
+import { useLocalStorage } from "@/Hooks/useLocalStorage";
 
 const AuthBackground = () => {
   const pathname = useGetId(2) as string;
   const { is_darkmode } = useStore();
+
+  const check_window = typeof window !== "undefined";
+  const username = check_window
+    ? JSON.parse(localStorage.getItem("username") as string)
+    : "Guest";
 
   return (
     <div className="w-full h-full flex items-center flex-col gap-2 justify-center signUpGradient">
@@ -37,7 +43,7 @@ const AuthBackground = () => {
           {pathname === "account-recovery"
             ? "Let's recover your account"
             : pathname === "signin"
-            ? "Welcome Soolaiman G"
+            ? `Welcome ${username}!`
             : pathname === "signup"
             ? "Let's get started"
             : "Forgot your password?🤔"}

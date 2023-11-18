@@ -10,6 +10,7 @@ import { useState } from "react";
 import { signUpProps } from "@/app/api/auth/signup/route";
 import { toast } from "@/components/ui/use-toast";
 import { useSearchParams } from "next/navigation";
+import { useLocalStorage } from "@/Hooks/useLocalStorage";
 
 const Page = () => {
   const params = useSearchParams(); //NEXTJS Search params to get the URL params
@@ -73,7 +74,10 @@ const Page = () => {
       return;
     }
 
+    const firstname = String(fullName).trim().split(" ")[0];
+
     SetAccountState("success"); //This is to show modal
+    localStorage.setItem("username", JSON.stringify(firstname));
   };
 
   return (

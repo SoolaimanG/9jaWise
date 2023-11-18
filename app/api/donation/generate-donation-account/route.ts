@@ -8,15 +8,13 @@ import {
   notificationsProps,
   userProps,
 } from "@/Models/user";
-import { donationProps } from "@/provider";
 import { getServerSession } from "next-auth";
-import { NextResponse } from "next/server";
 import { authOptions } from "../../auth/[...nextauth]/options";
 import { donation_campaign_email } from "@/Emails/email";
-import { v4 as uuidv4 } from "uuid";
 import { AccountModel, account_number_props } from "@/Models/accountNumbers";
 import mongoose from "mongoose";
 import { HTTP_STATUS } from "../withdraw/route";
+import { DonationModel, donationProps } from "@/Models/donation";
 
 // Handle HTTP POST requests
 export const POST = async (req: Request) => {
@@ -121,8 +119,9 @@ export const POST = async (req: Request) => {
       user.donation_campaigns.length + 1
     }`;
 
-    const new_donation: donationProps = {
-      id: ID.toString(),
+    //Details / Objects for creating new donation on the database
+    const donation: donationProps = {
+      _id: ID,
       created_by: user.username,
       amount_raised: 0,
       donation_name: donation_name,
@@ -130,14 +129,16 @@ export const POST = async (req: Request) => {
       target_amount: target_amount,
       date: date,
       donation_link: donation_link,
+      user_id: user._id.toString(),
       donators: [],
       donation_account: {
         account_name: donation_account_name,
         account_number: donation_account,
-        bank_name: "9JA WISE",
+        bank_name: "9JA WISE BANK",
       },
     };
 
+    //Notifying the user
     const new_notifications: notificationsProps = {
       time: Date.now(),
       type: "info",
@@ -145,13 +146,14 @@ export const POST = async (req: Request) => {
     };
 
     const updates: userProps<beneficiariesProps> | {} = {
-      donation_campaigns: [...user.donation_campaigns, new_donation],
       notifications: [...user.notifications, new_notifications],
       logs: {
         ...user.logs,
         totalEmailSent: user.logs.totalEmailSent + 1,
       },
     };
+
+    const new_donation = new DonationModel<donationProps>(donation);
 
     const account_number = new AccountModel<account_number_props>({
       _id: ID,
@@ -167,6 +169,7 @@ export const POST = async (req: Request) => {
 
     await Promise.all([
       UserModel.findByIdAndUpdate(user._id, updates),
+      new_donation.save(),
       account_number.save(),
       sendEmail({
         emailSubject: "New Donation Campaign Created",
@@ -177,7 +180,6 @@ export const POST = async (req: Request) => {
 
     // Close the database connection
     await closeConnection();
-
     return new Response(null, {
       status: HTTP_STATUS.OK,
       statusText: "Donation campaign created successfully",

@@ -7,14 +7,16 @@ import { Calendar } from "../ui/calendar";
 import TextArea from "../textArea";
 import { DialogClose } from "@radix-ui/react-dialog";
 import Button from "../button";
-import { donationProps, useStore } from "@/provider";
+import { useStore } from "@/provider";
 import { AiOutlinePlus } from "react-icons/ai";
 import { IoReturnUpForward } from "react-icons/io5";
 import { toast } from "../ui/use-toast";
+import { donationProps } from "@/Models/donation";
+import { addStatusMessage } from "./data";
 
 const Donation_edit = ({
   donation_name,
-  id,
+  _id,
   date,
   target_amount,
   description,
@@ -46,7 +48,7 @@ const Donation_edit = ({
       donation_name: donationName,
       description: new_description,
       amount: amount,
-      id: id,
+      id: _id.toString(),
     };
 
     const res = await fetch("/api/donation/edit", {
@@ -58,7 +60,7 @@ const Donation_edit = ({
       setLoading(false);
       toast({
         title: `ERROR ${res.status}`,
-        description: res.statusText,
+        description: res.statusText || addStatusMessage(res.status as 400),
         variant: "destructive",
       });
 
